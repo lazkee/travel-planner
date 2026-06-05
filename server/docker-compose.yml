@@ -1,0 +1,49 @@
+services:
+  travelplanner-sf:
+    image: mcr.microsoft.com/service-fabric/onebox:u20_9.1.1206.1
+    platform: linux/amd64
+    container_name: travelplanner-sf
+    hostname: travelplanner-sf
+    privileged: true
+    tty: true
+    stdin_open: true
+    ports:
+      - "19080:19080"
+      - "19000:19000"
+      - "8081:8081"
+      - "8082:8082"
+      - "25100-25200:25100-25200"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    networks:
+      - travelplanner-net
+    restart: unless-stopped
+
+  travelplanner-sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: travelplanner-sql
+    hostname: travelplanner-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - travelplanner-sqldata:/var/opt/mssql
+    networks:
+      - travelplanner-net
+    restart: unless-stopped
+
+networks:
+  travelplanner-net:
+    name: travelplanner-net
+    driver: bridge
+
+volumes:
+  travelplanner-sqldata:

@@ -55,3 +55,21 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# macOS
+.DS_Store
+
+# Local AI/tooling
+.claude/
+
+# Environment files
+*.env
+
+# Build outputs
+bin/
+obj/
+node_modules/
+dist/
+
+# Service Fabric generated package binaries
+server/pkg/**/Code/

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ApplicationManifest ApplicationTypeName="TravelPlannerAppType"
+                     ApplicationTypeVersion="1.0.0"
+                     xmlns="http://schemas.microsoft.com/2011/01/fabric"
+                     xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ServiceManifestImport>
+    <ServiceManifestRef ServiceManifestName="UserServicePkg" ServiceManifestVersion="1.0.0" />
+  </ServiceManifestImport>
+  <ServiceManifestImport>
+    <ServiceManifestRef ServiceManifestName="TravelServicePkg" ServiceManifestVersion="1.0.0" />
+  </ServiceManifestImport>
+  <ServiceManifestImport>
+    <ServiceManifestRef ServiceManifestName="SharingServicePkg" ServiceManifestVersion="1.0.0" />
+  </ServiceManifestImport>
+  <DefaultServices>
+    <Service Name="UserService" ServicePackageActivationMode="ExclusiveProcess">
+      <StatelessService ServiceTypeName="UserServiceType" InstanceCount="1">
+        <SingletonPartition />
+      </StatelessService>
+    </Service>
+    <Service Name="TravelService" ServicePackageActivationMode="ExclusiveProcess">
+      <StatelessService ServiceTypeName="TravelServiceType" InstanceCount="1">
+        <SingletonPartition />
+      </StatelessService>
+    </Service>
+    <Service Name="SharingService" ServicePackageActivationMode="ExclusiveProcess">
+      <StatefulService ServiceTypeName="SharingServiceType" TargetReplicaSetSize="1" MinReplicaSetSize="1">
+        <SingletonPartition />
+      </StatefulService>
+    </Service>
+  </DefaultServices>
+</ApplicationManifest>

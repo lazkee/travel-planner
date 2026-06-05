@@ -1,20 +1,6 @@
-var builder = WebApplication.CreateBuilder(args);
+using Microsoft.ServiceFabric.Services.Runtime;
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+ServiceRuntime.RegisterServiceAsync("TravelServiceType",
+    context => new TravelService.TravelService(context)).GetAwaiter().GetResult();
 
-var app = builder.Build();
-
-app.UseSwagger();
-app.UseSwaggerUI();
-
-app.MapGet("/api/health", () => Results.Ok(new
-{
-    service = "TravelService",
-    status = "OK"
-}));
-
-app.MapControllers();
-
-app.Run();
+Thread.Sleep(Timeout.Infinite);

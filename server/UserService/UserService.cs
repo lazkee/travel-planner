@@ -1,13 +1,17 @@
 using System.Fabric;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.ServiceFabric.Services.Communication.AspNetCore;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 using UserService.Data;
+using UserService.Services;
 
 namespace UserService;
 
@@ -35,10 +39,37 @@ internal sealed class UserService : StatelessService
                             services.AddDbContext<UserDbContext>(options =>
                                 options.UseSqlServer(ctx.Configuration.GetConnectionString("DefaultConnection"),
                                     sqlOptions => sqlOptions.MigrationsHistoryTable("__UserServiceMigrationsHistory")));
+
+                            services.AddSingleton<IJwtTokenService, JwtTokenService>();
+                            services.AddScoped<IAuthService, AuthService>();
+
+                            var jwtKey = ctx.Configuration["Jwt:Key"]!;
+                            var jwtIssuer = ctx.Configuration["Jwt:Issuer"]!;
+                            var jwtAudience = ctx.Configuration["Jwt:Audience"]!;
+
+                            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                                .AddJwtBearer(options =>
+                                {
+                                    options.TokenValidationParameters = new TokenValidationParameters
+                                    {
+                                        ValidateIssuer = true,
+                                        ValidateAudience = true,
+                                        ValidateLifetime = true,
+                                        ValidateIssuerSigningKey = true,
+                                        ValidIssuer = jwtIssuer,
+                                        ValidAudience = jwtAudience,
+                                        IssuerSigningKey = new SymmetricSecurityKey(
+                                            Encoding.UTF8.GetBytes(jwtKey))
+                                    };
+                                });
+
+                            services.AddAuthorization();
                         })
                         .Configure(app =>
                         {
                             app.UseRouting();
+                            app.UseAuthentication();
+                            app.UseAuthorization();
                             app.UseSwagger();
                             app.UseSwaggerUI();
                             app.UseEndpoints(endpoints =>

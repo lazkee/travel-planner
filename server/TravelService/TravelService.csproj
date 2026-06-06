@@ -30,4 +30,8 @@
     <ProjectReference Include="..\TravelPlanner.Shared\TravelPlanner.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
 </Project>

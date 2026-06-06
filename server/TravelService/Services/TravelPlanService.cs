@@ -12,11 +12,13 @@ public class TravelPlanService : ITravelPlanService
 {
     private readonly TravelDbContext _context;
     private readonly IMapper _mapper;
+    private readonly ISharingClientService _sharingClient;
 
-    public TravelPlanService(TravelDbContext context, IMapper mapper)
+    public TravelPlanService(TravelDbContext context, IMapper mapper, ISharingClientService sharingClient)
     {
         _context = context;
         _mapper = mapper;
+        _sharingClient = sharingClient;
     }
 
     public async Task<Result<List<TravelPlanDto>>> GetUserPlansAsync(int userId)
@@ -90,6 +92,10 @@ public class TravelPlanService : ITravelPlanService
 
         if (plan.UserId != userId)
             return Result<bool>.Failure(TravelServiceErrors.TravelPlanErrors.Forbidden);
+
+        var revokeResult = await _sharingClient.RevokeSharesForPlanAsync(planId);
+        if (revokeResult.IsFailure)
+            return Result<bool>.Failure(revokeResult.Error!);
 
         _context.TravelPlans.Remove(plan);
         await _context.SaveChangesAsync();

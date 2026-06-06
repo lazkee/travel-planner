@@ -71,4 +71,20 @@ public class SharingClientService : ISharingClientService
 
         return Result<ShareTokenDto>.Success(result.Token!);
     }
+
+    public async Task<Result<int>> RevokeSharesForPlanAsync(int travelPlanId)
+    {
+        try
+        {
+            var proxy = ServiceProxy.Create<ISharingService>(_sharingServiceUri);
+            var count = await proxy.RevokeForPlanAsync(travelPlanId);
+            return Result<int>.Success(count);
+        }
+        catch (Exception ex)
+        {
+            return Result<int>.Failure(new Error(
+                "Sharing.RevokeFailed",
+                $"Failed to revoke share tokens: {ex.Message}"));
+        }
+    }
 }

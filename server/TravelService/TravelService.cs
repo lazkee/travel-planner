@@ -69,6 +69,7 @@ internal sealed class TravelService : StatelessService
                             services.AddAuthorization();
 
                             services.AddAutoMapper(typeof(TravelPlanProfile).Assembly);
+                            services.AddScoped<ITravelPlanOwnershipValidator, TravelPlanOwnershipValidator>();
                             services.AddScoped<ITravelPlanService, TravelPlanService>();
                             services.AddScoped<IDestinationService, DestinationService>();
                             services.AddScoped<IActivityService, ActivityService>();

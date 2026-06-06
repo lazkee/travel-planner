@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using TravelPlanner.Shared.Common;
+using TravelService.Common;
 using TravelService.Data;
 using TravelService.Dtos;
 using TravelService.Models;
@@ -9,15 +10,6 @@ namespace TravelService.Services;
 
 public class TravelPlanService : ITravelPlanService
 {
-    private static readonly Error NotFoundError =
-        new("TravelPlan.NotFound", "Travel plan was not found.");
-    private static readonly Error ForbiddenError =
-        new("TravelPlan.Forbidden", "You are not allowed to access this travel plan.");
-    private static readonly Error InvalidDateRangeError =
-        new("TravelPlan.InvalidDateRange", "End date cannot be before start date.");
-    private static readonly Error InvalidBudgetError =
-        new("TravelPlan.InvalidBudget", "Budget cannot be negative.");
-
     private readonly TravelDbContext _context;
     private readonly IMapper _mapper;
 
@@ -41,10 +33,10 @@ public class TravelPlanService : ITravelPlanService
         var plan = await _context.TravelPlans.FindAsync(planId);
 
         if (plan == null)
-            return Result<TravelPlanDto>.Failure(NotFoundError);
+            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
 
         if (plan.UserId != userId)
-            return Result<TravelPlanDto>.Failure(ForbiddenError);
+            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.Forbidden);
 
         return Result<TravelPlanDto>.Success(_mapper.Map<TravelPlanDto>(plan));
     }
@@ -52,10 +44,10 @@ public class TravelPlanService : ITravelPlanService
     public async Task<Result<TravelPlanDto>> CreateAsync(int userId, TravelPlanRequestDto request)
     {
         if (request.EndDate < request.StartDate)
-            return Result<TravelPlanDto>.Failure(InvalidDateRangeError);
+            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.InvalidDateRange);
 
         if (request.Budget < 0)
-            return Result<TravelPlanDto>.Failure(InvalidBudgetError);
+            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.InvalidBudget);
 
         var plan = _mapper.Map<TravelPlan>(request);
         plan.UserId = userId;
@@ -72,16 +64,16 @@ public class TravelPlanService : ITravelPlanService
         var plan = await _context.TravelPlans.FindAsync(planId);
 
         if (plan == null)
-            return Result<TravelPlanDto>.Failure(NotFoundError);
+            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
 
         if (plan.UserId != userId)
-            return Result<TravelPlanDto>.Failure(ForbiddenError);
+            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.Forbidden);
 
         if (request.EndDate < request.StartDate)
-            return Result<TravelPlanDto>.Failure(InvalidDateRangeError);
+            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.InvalidDateRange);
 
         if (request.Budget < 0)
-            return Result<TravelPlanDto>.Failure(InvalidBudgetError);
+            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.InvalidBudget);
 
         _mapper.Map(request, plan);
         await _context.SaveChangesAsync();
@@ -94,10 +86,10 @@ public class TravelPlanService : ITravelPlanService
         var plan = await _context.TravelPlans.FindAsync(planId);
 
         if (plan == null)
-            return Result<bool>.Failure(NotFoundError);
+            return Result<bool>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
 
         if (plan.UserId != userId)
-            return Result<bool>.Failure(ForbiddenError);
+            return Result<bool>.Failure(TravelServiceErrors.TravelPlanErrors.Forbidden);
 
         _context.TravelPlans.Remove(plan);
         await _context.SaveChangesAsync();

@@ -45,4 +45,13 @@ public static class TravelServiceErrors
         public static readonly Error InvalidAmount =
             new("Expense.InvalidAmount", "Expense amount cannot be negative.");
     }
+
+    public static class ChecklistItemErrors
+    {
+        public static readonly Error NotFound =
+            new("ChecklistItem.NotFound", "Checklist item was not found.");
+
+        public static readonly Error EmptyText =
+            new("ChecklistItem.EmptyText", "Checklist item text is required.");
+    }
 }

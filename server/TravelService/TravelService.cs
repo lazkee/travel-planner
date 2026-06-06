@@ -75,6 +75,7 @@ internal sealed class TravelService : StatelessService
                             services.AddScoped<IActivityService, ActivityService>();
                             services.AddScoped<IExpenseService, ExpenseService>();
                             services.AddScoped<IChecklistItemService, ChecklistItemService>();
+                            services.AddScoped<IBudgetSummaryService, BudgetSummaryService>();
                         })
                         .Configure(app =>
                         {

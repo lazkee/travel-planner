@@ -42,6 +42,7 @@ internal sealed class UserService : StatelessService
 
                             services.AddSingleton<IJwtTokenService, JwtTokenService>();
                             services.AddScoped<IAuthService, AuthService>();
+                            services.AddScoped<UserSeeder>();
 
                             var jwtKey = ctx.Configuration["Jwt:Key"]!;
                             var jwtIssuer = ctx.Configuration["Jwt:Issuer"]!;
@@ -78,6 +79,10 @@ internal sealed class UserService : StatelessService
                                     await ctx.Response.WriteAsJsonAsync(new { service = "UserService", status = "OK" }));
                                 endpoints.MapControllers();
                             });
+
+                            using var scope = app.ApplicationServices.CreateScope();
+                            scope.ServiceProvider.GetRequiredService<UserSeeder>()
+                                .SeedDefaultAdminAsync().GetAwaiter().GetResult();
                         })
                         .UseServiceFabricIntegration(listener, ServiceFabricIntegrationOptions.None)
                         .UseUrls(url)

@@ -13,6 +13,7 @@ using Microsoft.ServiceFabric.Services.Runtime;
 using TravelService.Data;
 using TravelService.Mapping;
 using TravelService.Services;
+using System.Text.Json.Serialization;
 
 namespace TravelService;
 
@@ -34,7 +35,11 @@ internal sealed class TravelService : StatelessService
                         })
                         .ConfigureServices((ctx, services) =>
                         {
-                            services.AddControllers();
+                            services.AddControllers()
+                                .AddJsonOptions(options =>
+                                {
+                                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                                });
                             services.AddEndpointsApiExplorer();
                             services.AddSwaggerGen();
                             services.AddDbContext<TravelDbContext>(options =>
@@ -66,6 +71,7 @@ internal sealed class TravelService : StatelessService
                             services.AddAutoMapper(typeof(TravelPlanProfile).Assembly);
                             services.AddScoped<ITravelPlanService, TravelPlanService>();
                             services.AddScoped<IDestinationService, DestinationService>();
+                            services.AddScoped<IActivityService, ActivityService>();
                         })
                         .Configure(app =>
                         {

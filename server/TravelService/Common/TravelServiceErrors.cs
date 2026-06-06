@@ -36,4 +36,13 @@ public static class TravelServiceErrors
         public static readonly Error InvalidEstimatedCost =
             new("Activity.InvalidEstimatedCost", "Estimated cost cannot be negative.");
     }
+
+    public static class ExpenseErrors
+    {
+        public static readonly Error NotFound =
+            new("Expense.NotFound", "Expense was not found.");
+
+        public static readonly Error InvalidAmount =
+            new("Expense.InvalidAmount", "Expense amount cannot be negative.");
+    }
 }

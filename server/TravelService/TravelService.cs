@@ -73,6 +73,7 @@ internal sealed class TravelService : StatelessService
                             services.AddScoped<ITravelPlanService, TravelPlanService>();
                             services.AddScoped<IDestinationService, DestinationService>();
                             services.AddScoped<IActivityService, ActivityService>();
+                            services.AddScoped<IExpenseService, ExpenseService>();
                         })
                         .Configure(app =>
                         {

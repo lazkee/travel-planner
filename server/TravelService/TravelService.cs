@@ -11,6 +11,8 @@ using Microsoft.ServiceFabric.Services.Communication.AspNetCore;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 using TravelService.Data;
+using TravelService.Mapping;
+using TravelService.Services;
 
 namespace TravelService;
 
@@ -60,6 +62,9 @@ internal sealed class TravelService : StatelessService
                                 });
 
                             services.AddAuthorization();
+
+                            services.AddAutoMapper(typeof(TravelPlanProfile).Assembly);
+                            services.AddScoped<ITravelPlanService, TravelPlanService>();
                         })
                         .Configure(app =>
                         {

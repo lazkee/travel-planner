@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 using TravelPlanner.Shared;
 using TravelPlanner.Shared.Common;
+using TravelPlanner.Shared.Sharing;
 using TravelService.Dtos;
 
 namespace TravelService.Services;
@@ -49,5 +50,25 @@ public class SharingClientService : ISharingClientService
         };
 
         return Result<ShareResponseDto>.Success(response);
+    }
+
+    public async Task<Result<ShareTokenDto>> ValidateShareAsync(string token)
+    {
+        var proxy = ServiceProxy.Create<ISharingService>(_sharingServiceUri);
+        var result = await proxy.ValidateAsync(token);
+
+        if (!result.IsValid)
+        {
+            var (code, message) = result.ErrorCode switch
+            {
+                "Sharing.EmptyToken" => ("Sharing.EmptyToken", "Token is required."),
+                "Sharing.NotFound"   => ("Sharing.NotFound",   "Share token was not found."),
+                "Sharing.Expired"    => ("Sharing.Expired",    "Share token has expired."),
+                _                    => ("Sharing.Invalid",    "Share token is invalid.")
+            };
+            return Result<ShareTokenDto>.Failure(new Error(code, message));
+        }
+
+        return Result<ShareTokenDto>.Success(result.Token!);
     }
 }

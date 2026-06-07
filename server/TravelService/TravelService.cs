@@ -78,6 +78,7 @@ internal sealed class TravelService : StatelessService
                             services.AddScoped<IBudgetSummaryService, BudgetSummaryService>();
                             services.AddScoped<ISharingClientService, SharingClientService>();
                             services.AddScoped<ISharedPlanService, SharedPlanService>();
+                            services.AddScoped<ISharedEditService, SharedEditService>();
                         })
                         .Configure(app =>
                         {

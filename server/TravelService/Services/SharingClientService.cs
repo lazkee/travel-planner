@@ -72,6 +72,20 @@ public class SharingClientService : ISharingClientService
         return Result<ShareTokenDto>.Success(result.Token!);
     }
 
+    public async Task<Result<ShareTokenDto>> ValidateEditShareAsync(string token)
+    {
+        var result = await ValidateShareAsync(token);
+        if (result.IsFailure)
+            return result;
+
+        if (!string.Equals(result.Value!.AccessLevel, "Edit", StringComparison.OrdinalIgnoreCase))
+            return Result<ShareTokenDto>.Failure(new Error(
+                "Sharing.EditAccessRequired",
+                "This share link does not have edit access."));
+
+        return result;
+    }
+
     public async Task<Result<int>> RevokeSharesForPlanAsync(int travelPlanId)
     {
         try

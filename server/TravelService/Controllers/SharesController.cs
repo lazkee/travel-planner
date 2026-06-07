@@ -36,6 +36,32 @@ public class SharesController : ControllerBase
         return result.IsSuccess ? Ok(result.Value) : MapError(result.Error!);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetShares(int planId)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
+
+        var planError = await _ownershipValidator.ValidateAsync(userId.Value, planId);
+        if (planError != null) return MapError(planError);
+
+        var result = await _sharingClientService.GetSharesForPlanAsync(planId);
+        return result.IsSuccess ? Ok(result.Value) : MapError(result.Error!);
+    }
+
+    [HttpDelete("{token}")]
+    public async Task<IActionResult> RevokeShare(int planId, string token)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
+
+        var planError = await _ownershipValidator.ValidateAsync(userId.Value, planId);
+        if (planError != null) return MapError(planError);
+
+        var result = await _sharingClientService.RevokeShareAsync(planId, token);
+        return result.IsSuccess ? NoContent() : MapError(result.Error!);
+    }
+
     private int? GetCurrentUserId()
     {
         var value = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -46,6 +72,7 @@ public class SharesController : ControllerBase
     {
         "TravelPlan.NotFound" => NotFound(new { message = error.Message }),
         "TravelPlan.Forbidden" => StatusCode(403, new { message = error.Message }),
+        "Sharing.NotFound" => NotFound(new { message = error.Message }),
         _ => BadRequest(new { message = error.Message })
     };
 }

@@ -9,4 +9,5 @@ public interface ISharingService : IService
     Task<ShareValidationResult> ValidateAsync(string token);
     Task RevokeAsync(string token);
     Task<int> RevokeForPlanAsync(int travelPlanId);
+    Task<List<ShareTokenDto>> GetForPlanAsync(int travelPlanId);
 }

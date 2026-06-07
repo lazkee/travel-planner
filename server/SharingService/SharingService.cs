@@ -107,6 +107,36 @@ internal sealed class SharingService : StatefulService, ISharingService
         return toRemove.Count;
     }
 
+    public async Task<List<ShareTokenDto>> GetForPlanAsync(int travelPlanId)
+    {
+        var dict = await StateManager.GetOrAddAsync<IReliableDictionary<string, ShareTokenDto>>(DictionaryName);
+
+        using var tx = StateManager.CreateTransaction();
+        var enumerable = await dict.CreateEnumerableAsync(tx);
+        var enumerator = enumerable.GetAsyncEnumerator();
+
+        var result = new List<ShareTokenDto>();
+        var expired = new List<string>();
+        var now = DateTime.UtcNow;
+
+        while (await enumerator.MoveNextAsync(CancellationToken.None))
+        {
+            var entry = enumerator.Current.Value;
+            if (entry.TravelPlanId != travelPlanId) continue;
+
+            if (entry.ExpiresAtUtc <= now)
+                expired.Add(enumerator.Current.Key);
+            else
+                result.Add(entry);
+        }
+
+        foreach (var key in expired)
+            await dict.TryRemoveAsync(tx, key);
+
+        await tx.CommitAsync();
+        return result;
+    }
+
     private static string GenerateToken()
     {
         var bytes = new byte[32];

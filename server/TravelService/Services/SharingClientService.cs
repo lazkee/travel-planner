@@ -101,4 +101,34 @@ public class SharingClientService : ISharingClientService
                 $"Failed to revoke share tokens: {ex.Message}"));
         }
     }
+
+    public async Task<Result<List<ShareResponseDto>>> GetSharesForPlanAsync(int travelPlanId)
+    {
+        var proxy = ServiceProxy.Create<ISharingService>(_sharingServiceUri);
+        var tokens = await proxy.GetForPlanAsync(travelPlanId);
+        var responses = tokens.Select(t => new ShareResponseDto
+        {
+            Token = t.Token,
+            TravelPlanId = t.TravelPlanId,
+            AccessLevel = t.AccessLevel,
+            ExpiresAtUtc = t.ExpiresAtUtc,
+            ShareUrl = $"{_publicBaseUrl}/shared/{t.Token}"
+        }).ToList();
+        return Result<List<ShareResponseDto>>.Success(responses);
+    }
+
+    public async Task<Result<bool>> RevokeShareAsync(int planId, string token)
+    {
+        var proxy = ServiceProxy.Create<ISharingService>(_sharingServiceUri);
+        var validation = await proxy.ValidateAsync(token);
+
+        if (!validation.IsValid)
+            return Result<bool>.Failure(new Error("Sharing.NotFound", "Share token was not found."));
+
+        if (validation.Token!.TravelPlanId != planId)
+            return Result<bool>.Failure(new Error("Sharing.NotFound", "Share token was not found."));
+
+        await proxy.RevokeAsync(token);
+        return Result<bool>.Success(true);
+    }
 }

@@ -26,13 +26,15 @@ public class SharesController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
+        var accessLevel = request.AccessLevel!.Value;
+
         var userId = GetCurrentUserId();
         if (userId == null) return Unauthorized();
 
         var planError = await _ownershipValidator.ValidateAsync(userId.Value, planId);
         if (planError != null) return MapError(planError);
 
-        var result = await _sharingClientService.CreateShareAsync(planId, request.AccessLevel.Value, request.ExpiresAtUtc);
+        var result = await _sharingClientService.CreateShareAsync(planId, accessLevel, request.ExpiresAtUtc);
         return result.IsSuccess ? Ok(result.Value) : MapError(result.Error!);
     }
 

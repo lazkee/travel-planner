@@ -102,4 +102,42 @@ public class TravelPlanService : ITravelPlanService
 
         return Result<bool>.Success(true);
     }
+
+    public async Task<Result<UserTravelDataCleanupResultDto>> DeleteAllForUserAsync(int userId)
+    {
+        var plans = await _context.TravelPlans
+            .Where(p => p.UserId == userId)
+            .ToListAsync();
+
+        if (plans.Count == 0)
+        {
+            return Result<UserTravelDataCleanupResultDto>.Success(new UserTravelDataCleanupResultDto
+            {
+                UserId = userId,
+                DeletedTravelPlansCount = 0,
+                RevokedShareTokensCount = 0
+            });
+        }
+
+        var revokedShareTokensCount = 0;
+
+        foreach (var plan in plans)
+        {
+            var revokeResult = await _sharingClient.RevokeSharesForPlanAsync(plan.Id);
+            if (revokeResult.IsFailure)
+                return Result<UserTravelDataCleanupResultDto>.Failure(revokeResult.Error!);
+
+            revokedShareTokensCount += revokeResult.Value;
+        }
+
+        _context.TravelPlans.RemoveRange(plans);
+        await _context.SaveChangesAsync();
+
+        return Result<UserTravelDataCleanupResultDto>.Success(new UserTravelDataCleanupResultDto
+        {
+            UserId = userId,
+            DeletedTravelPlansCount = plans.Count,
+            RevokedShareTokensCount = revokedShareTokensCount
+        });
+    }
 }

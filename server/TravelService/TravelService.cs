@@ -23,6 +23,9 @@ namespace TravelService;
 
 internal sealed class TravelService : StatelessService, ITravelDataCleanupService
 {
+    private const string CorsPolicyName = "TravelPlannerFrontend";
+    private const string CorsAllowedOriginsSection = "Cors:AllowedOrigins";
+
     private readonly ServiceProvider _remotingServiceProvider;
 
     public TravelService(StatelessServiceContext context) : base(context)
@@ -46,11 +49,24 @@ internal sealed class TravelService : StatelessService, ITravelDataCleanupServic
                     })
                     .ConfigureServices((ctx, services) =>
                     {
+                        var allowedOrigins = ctx.Configuration
+                            .GetSection(CorsAllowedOriginsSection)
+                            .Get<string[]>() ?? Array.Empty<string>();
+
                         services.AddControllers()
                             .AddJsonOptions(options =>
                             {
                                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                             });
+                        services.AddCors(options =>
+                        {
+                            options.AddPolicy(CorsPolicyName, policy =>
+                            {
+                                policy.WithOrigins(allowedOrigins)
+                                    .AllowAnyHeader()
+                                    .AllowAnyMethod();
+                            });
+                        });
                         services.AddEndpointsApiExplorer();
                         services.AddSwaggerGen();
                         ConfigureBusinessServices(services, ctx.Configuration);
@@ -80,6 +96,7 @@ internal sealed class TravelService : StatelessService, ITravelDataCleanupServic
                     .Configure(app =>
                     {
                         app.UseRouting();
+                        app.UseCors(CorsPolicyName);
                         app.UseAuthentication();
                         app.UseAuthorization();
                         app.UseSwagger();

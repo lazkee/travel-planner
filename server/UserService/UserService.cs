@@ -17,6 +17,9 @@ namespace UserService;
 
 internal sealed class UserService : StatelessService
 {
+    private const string CorsPolicyName = "TravelPlannerFrontend";
+    private const string CorsAllowedOriginsSection = "Cors:AllowedOrigins";
+
     public UserService(StatelessServiceContext context) : base(context) { }
 
     protected override IEnumerable<ServiceInstanceListener> CreateServiceInstanceListeners() =>
@@ -33,7 +36,20 @@ internal sealed class UserService : StatelessService
                         })
                         .ConfigureServices((ctx, services) =>
                         {
+                            var allowedOrigins = ctx.Configuration
+                                .GetSection(CorsAllowedOriginsSection)
+                                .Get<string[]>() ?? Array.Empty<string>();
+
                             services.AddControllers();
+                            services.AddCors(options =>
+                            {
+                                options.AddPolicy(CorsPolicyName, policy =>
+                                {
+                                    policy.WithOrigins(allowedOrigins)
+                                        .AllowAnyHeader()
+                                        .AllowAnyMethod();
+                                });
+                            });
                             services.AddEndpointsApiExplorer();
                             services.AddSwaggerGen();
                             services.AddDbContext<UserDbContext>(options =>
@@ -71,6 +87,7 @@ internal sealed class UserService : StatelessService
                         .Configure(app =>
                         {
                             app.UseRouting();
+                            app.UseCors(CorsPolicyName);
                             app.UseAuthentication();
                             app.UseAuthorization();
                             app.UseSwagger();

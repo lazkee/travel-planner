@@ -231,4 +231,67 @@ public class SharedEditService : ISharedEditService
 
         return Result<bool>.Success(true);
     }
+
+    public async Task<Result<ChecklistItemDto>> CreateChecklistItemAsync(string token, ChecklistItemRequestDto request)
+    {
+        var tokenResult = await _sharingClient.ValidateEditShareAsync(token);
+        if (tokenResult.IsFailure)
+            return Result<ChecklistItemDto>.Failure(tokenResult.Error!);
+
+        var planId = tokenResult.Value!.TravelPlanId;
+
+        if (string.IsNullOrWhiteSpace(request.Text))
+            return Result<ChecklistItemDto>.Failure(TravelServiceErrors.ChecklistItemErrors.EmptyText);
+
+        var item = _mapper.Map<ChecklistItem>(request);
+        item.TravelPlanId = planId;
+
+        _context.ChecklistItems.Add(item);
+        await _context.SaveChangesAsync();
+
+        return Result<ChecklistItemDto>.Success(_mapper.Map<ChecklistItemDto>(item));
+    }
+
+    public async Task<Result<ChecklistItemDto>> UpdateChecklistItemAsync(string token, int checklistItemId, ChecklistItemRequestDto request)
+    {
+        var tokenResult = await _sharingClient.ValidateEditShareAsync(token);
+        if (tokenResult.IsFailure)
+            return Result<ChecklistItemDto>.Failure(tokenResult.Error!);
+
+        var planId = tokenResult.Value!.TravelPlanId;
+
+        var item = await _context.ChecklistItems
+            .FirstOrDefaultAsync(c => c.Id == checklistItemId && c.TravelPlanId == planId);
+
+        if (item == null)
+            return Result<ChecklistItemDto>.Failure(TravelServiceErrors.ChecklistItemErrors.NotFound);
+
+        if (string.IsNullOrWhiteSpace(request.Text))
+            return Result<ChecklistItemDto>.Failure(TravelServiceErrors.ChecklistItemErrors.EmptyText);
+
+        _mapper.Map(request, item);
+        await _context.SaveChangesAsync();
+
+        return Result<ChecklistItemDto>.Success(_mapper.Map<ChecklistItemDto>(item));
+    }
+
+    public async Task<Result<bool>> DeleteChecklistItemAsync(string token, int checklistItemId)
+    {
+        var tokenResult = await _sharingClient.ValidateEditShareAsync(token);
+        if (tokenResult.IsFailure)
+            return Result<bool>.Failure(tokenResult.Error!);
+
+        var planId = tokenResult.Value!.TravelPlanId;
+
+        var item = await _context.ChecklistItems
+            .FirstOrDefaultAsync(c => c.Id == checklistItemId && c.TravelPlanId == planId);
+
+        if (item == null)
+            return Result<bool>.Failure(TravelServiceErrors.ChecklistItemErrors.NotFound);
+
+        _context.ChecklistItems.Remove(item);
+        await _context.SaveChangesAsync();
+
+        return Result<bool>.Success(true);
+    }
 }

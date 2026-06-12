@@ -15,4 +15,7 @@ public interface ISharedEditService
     Task<Result<ExpenseDto>> CreateExpenseAsync(string token, ExpenseRequestDto request);
     Task<Result<ExpenseDto>> UpdateExpenseAsync(string token, int expenseId, ExpenseRequestDto request);
     Task<Result<bool>> DeleteExpenseAsync(string token, int expenseId);
+    Task<Result<ChecklistItemDto>> CreateChecklistItemAsync(string token, ChecklistItemRequestDto request);
+    Task<Result<ChecklistItemDto>> UpdateChecklistItemAsync(string token, int checklistItemId, ChecklistItemRequestDto request);
+    Task<Result<bool>> DeleteChecklistItemAsync(string token, int checklistItemId);
 }

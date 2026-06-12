@@ -102,6 +102,31 @@ public class SharedEditController : ControllerBase
         return result.IsSuccess ? NoContent() : MapError(result.Error!);
     }
 
+    [HttpPost("checklist-items")]
+    public async Task<IActionResult> CreateChecklistItem(string token, [FromBody] ChecklistItemRequestDto request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var result = await _sharedEditService.CreateChecklistItemAsync(token, request);
+        return result.IsSuccess ? Ok(result.Value) : MapError(result.Error!);
+    }
+
+    [HttpPut("checklist-items/{id}")]
+    public async Task<IActionResult> UpdateChecklistItem(string token, int id, [FromBody] ChecklistItemRequestDto request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var result = await _sharedEditService.UpdateChecklistItemAsync(token, id, request);
+        return result.IsSuccess ? Ok(result.Value) : MapError(result.Error!);
+    }
+
+    [HttpDelete("checklist-items/{id}")]
+    public async Task<IActionResult> DeleteChecklistItem(string token, int id)
+    {
+        var result = await _sharedEditService.DeleteChecklistItemAsync(token, id);
+        return result.IsSuccess ? NoContent() : MapError(result.Error!);
+    }
+
     private IActionResult MapError(Error error) => error.Code switch
     {
         "Sharing.NotFound"           => NotFound(new { message = error.Message }),
@@ -109,6 +134,7 @@ public class SharedEditController : ControllerBase
         "Destination.NotFound"       => NotFound(new { message = error.Message }),
         "Activity.NotFound"          => NotFound(new { message = error.Message }),
         "Expense.NotFound"           => NotFound(new { message = error.Message }),
+        "ChecklistItem.NotFound"     => NotFound(new { message = error.Message }),
         "Sharing.EditAccessRequired" => StatusCode(403, new { message = error.Message }),
         "Sharing.Expired"            => StatusCode(410, new { message = error.Message }),
         _                            => BadRequest(new { message = error.Message })

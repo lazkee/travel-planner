@@ -43,7 +43,7 @@ internal sealed class UserService : StatelessService
                             services.AddSingleton<IJwtTokenService, JwtTokenService>();
                             services.AddScoped<IAuthService, AuthService>();
                             services.AddScoped<IAdminUserService, AdminUserService>();
-                            services.AddHttpClient<ITravelDataCleanupClient, TravelDataCleanupClient>();
+                            services.AddScoped<ITravelDataCleanupClient, TravelDataCleanupClient>();
                             services.AddScoped<UserSeeder>();
 
                             var jwtKey = ctx.Configuration["Jwt:Key"]!;

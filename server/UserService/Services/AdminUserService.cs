@@ -50,7 +50,7 @@ public class AdminUserService : IAdminUserService
         return Result<AdminUserDto>.Success(BuildDto(user));
     }
 
-    public async Task<Result<bool>> DeleteAsync(int currentAdminUserId, int id, string authorizationHeader)
+    public async Task<Result<bool>> DeleteAsync(int currentAdminUserId, int id)
     {
         if (currentAdminUserId == id)
             return Result<bool>.Failure(AdminUserErrors.SelfDeleteNotAllowed);
@@ -59,7 +59,7 @@ public class AdminUserService : IAdminUserService
         if (user == null)
             return Result<bool>.Failure(AdminUserErrors.NotFound);
 
-        var cleanupResult = await _travelDataCleanupClient.DeleteUserTravelDataAsync(id, authorizationHeader);
+        var cleanupResult = await _travelDataCleanupClient.DeleteUserTravelDataAsync(id);
         if (cleanupResult.IsFailure)
             return Result<bool>.Failure(cleanupResult.Error!);
 

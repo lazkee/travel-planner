@@ -48,8 +48,7 @@ public class AdminUsersController : ControllerBase
         var currentAdminUserId = GetCurrentUserId();
         if (currentAdminUserId == null) return Unauthorized();
 
-        var authorizationHeader = Request.Headers.Authorization.ToString();
-        var result = await _adminUserService.DeleteAsync(currentAdminUserId.Value, id, authorizationHeader);
+        var result = await _adminUserService.DeleteAsync(currentAdminUserId.Value, id);
         return result.IsSuccess ? NoContent() : MapError(result.Error!);
     }
 

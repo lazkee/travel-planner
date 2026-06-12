@@ -1,36 +1,41 @@
+using Microsoft.ServiceFabric.Services.Remoting.Client;
+using TravelPlanner.Shared;
 using TravelPlanner.Shared.Common;
 
 namespace UserService.Services;
 
 public class TravelDataCleanupClient : ITravelDataCleanupClient
 {
-    private readonly HttpClient _httpClient;
+    private readonly Uri _travelServiceUri;
 
-    public TravelDataCleanupClient(HttpClient httpClient, IConfiguration configuration)
+    public TravelDataCleanupClient(IConfiguration configuration)
     {
-        _httpClient = httpClient;
-
-        var baseUrl = configuration["TravelService:BaseUrl"]
-            ?? throw new InvalidOperationException("TravelService:BaseUrl is not configured.");
-
-        _httpClient.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
+        _travelServiceUri = new Uri(
+            configuration["TravelService:ServiceUri"]
+            ?? throw new InvalidOperationException("TravelService:ServiceUri is not configured."));
     }
 
-    public async Task<Result<bool>> DeleteUserTravelDataAsync(int userId, string authorizationHeader)
+    public async Task<Result<bool>> DeleteUserTravelDataAsync(int userId)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Delete, $"api/admin/users/{userId}/travel-data");
+        try
+        {
+            var proxy = ServiceProxy.Create<ITravelDataCleanupService>(_travelServiceUri);
 
-        if (!string.IsNullOrWhiteSpace(authorizationHeader))
-            request.Headers.TryAddWithoutValidation("Authorization", authorizationHeader);
+            var response = await proxy.DeleteAllForUserAsync(userId);
+            if (!response.IsSuccess)
+            {
+                return Result<bool>.Failure(new Error(
+                    "Admin.TravelDataCleanupFailed",
+                    response.ErrorMessage ?? "TravelService cleanup failed."));
+            }
 
-        using var response = await _httpClient.SendAsync(request);
-        if (!response.IsSuccessStatusCode)
+            return Result<bool>.Success(true);
+        }
+        catch (Exception ex)
         {
             return Result<bool>.Failure(new Error(
                 "Admin.TravelDataCleanupFailed",
-                $"TravelService cleanup failed with status {(int)response.StatusCode}."));
+                $"TravelService cleanup failed: {ex.Message}"));
         }
-
-        return Result<bool>.Success(true);
     }
 }

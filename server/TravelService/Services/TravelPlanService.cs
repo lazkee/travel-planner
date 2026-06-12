@@ -30,6 +30,15 @@ public class TravelPlanService : ITravelPlanService
         return Result<List<TravelPlanDto>>.Success(_mapper.Map<List<TravelPlanDto>>(plans));
     }
 
+    public async Task<Result<List<AdminTravelPlanDto>>> GetAllForAdminAsync()
+    {
+        var plans = await _context.TravelPlans
+            .OrderBy(p => p.Id)
+            .ToListAsync();
+
+        return Result<List<AdminTravelPlanDto>>.Success(plans.Select(BuildAdminDto).ToList());
+    }
+
     public async Task<Result<TravelPlanDto>> GetByIdAsync(int userId, int planId)
     {
         var plan = await _context.TravelPlans.FindAsync(planId);
@@ -103,6 +112,23 @@ public class TravelPlanService : ITravelPlanService
         return Result<bool>.Success(true);
     }
 
+    public async Task<Result<bool>> DeleteAsAdminAsync(int planId)
+    {
+        var plan = await _context.TravelPlans.FindAsync(planId);
+
+        if (plan == null)
+            return Result<bool>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
+        var revokeResult = await _sharingClient.RevokeSharesForPlanAsync(planId);
+        if (revokeResult.IsFailure)
+            return Result<bool>.Failure(revokeResult.Error!);
+
+        _context.TravelPlans.Remove(plan);
+        await _context.SaveChangesAsync();
+
+        return Result<bool>.Success(true);
+    }
+
     public async Task<Result<UserTravelDataCleanupResultDto>> DeleteAllForUserAsync(int userId)
     {
         var plans = await _context.TravelPlans
@@ -140,4 +166,17 @@ public class TravelPlanService : ITravelPlanService
             RevokedShareTokensCount = revokedShareTokensCount
         });
     }
+
+    private static AdminTravelPlanDto BuildAdminDto(TravelPlan plan) => new()
+    {
+        Id = plan.Id,
+        UserId = plan.UserId,
+        Name = plan.Name,
+        Description = plan.Description,
+        StartDate = plan.StartDate,
+        EndDate = plan.EndDate,
+        Budget = plan.Budget,
+        Notes = plan.Notes,
+        CreatedAt = plan.CreatedAt
+    };
 }

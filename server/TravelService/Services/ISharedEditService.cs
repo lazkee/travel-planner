@@ -9,4 +9,7 @@ public interface ISharedEditService
     Task<Result<DestinationDto>> CreateDestinationAsync(string token, DestinationRequestDto request);
     Task<Result<DestinationDto>> UpdateDestinationAsync(string token, int destinationId, DestinationRequestDto request);
     Task<Result<bool>> DeleteDestinationAsync(string token, int destinationId);
+    Task<Result<ActivityDto>> CreateActivityAsync(string token, ActivityRequestDto request);
+    Task<Result<ActivityDto>> UpdateActivityAsync(string token, int activityId, ActivityRequestDto request);
+    Task<Result<bool>> DeleteActivityAsync(string token, int activityId);
 }

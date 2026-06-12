@@ -105,4 +105,67 @@ public class SharedEditService : ISharedEditService
 
         return Result<bool>.Success(true);
     }
+
+    public async Task<Result<ActivityDto>> CreateActivityAsync(string token, ActivityRequestDto request)
+    {
+        var tokenResult = await _sharingClient.ValidateEditShareAsync(token);
+        if (tokenResult.IsFailure)
+            return Result<ActivityDto>.Failure(tokenResult.Error!);
+
+        var planId = tokenResult.Value!.TravelPlanId;
+
+        if (request.EstimatedCost < 0)
+            return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.InvalidEstimatedCost);
+
+        var activity = _mapper.Map<TravelActivity>(request);
+        activity.TravelPlanId = planId;
+
+        _context.Activities.Add(activity);
+        await _context.SaveChangesAsync();
+
+        return Result<ActivityDto>.Success(_mapper.Map<ActivityDto>(activity));
+    }
+
+    public async Task<Result<ActivityDto>> UpdateActivityAsync(string token, int activityId, ActivityRequestDto request)
+    {
+        var tokenResult = await _sharingClient.ValidateEditShareAsync(token);
+        if (tokenResult.IsFailure)
+            return Result<ActivityDto>.Failure(tokenResult.Error!);
+
+        var planId = tokenResult.Value!.TravelPlanId;
+
+        var activity = await _context.Activities
+            .FirstOrDefaultAsync(a => a.Id == activityId && a.TravelPlanId == planId);
+
+        if (activity == null)
+            return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.NotFound);
+
+        if (request.EstimatedCost < 0)
+            return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.InvalidEstimatedCost);
+
+        _mapper.Map(request, activity);
+        await _context.SaveChangesAsync();
+
+        return Result<ActivityDto>.Success(_mapper.Map<ActivityDto>(activity));
+    }
+
+    public async Task<Result<bool>> DeleteActivityAsync(string token, int activityId)
+    {
+        var tokenResult = await _sharingClient.ValidateEditShareAsync(token);
+        if (tokenResult.IsFailure)
+            return Result<bool>.Failure(tokenResult.Error!);
+
+        var planId = tokenResult.Value!.TravelPlanId;
+
+        var activity = await _context.Activities
+            .FirstOrDefaultAsync(a => a.Id == activityId && a.TravelPlanId == planId);
+
+        if (activity == null)
+            return Result<bool>.Failure(TravelServiceErrors.ActivityErrors.NotFound);
+
+        _context.Activities.Remove(activity);
+        await _context.SaveChangesAsync();
+
+        return Result<bool>.Success(true);
+    }
 }

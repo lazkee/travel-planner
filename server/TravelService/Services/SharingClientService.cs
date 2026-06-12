@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
+using QRCoder;
 using TravelPlanner.Shared;
 using TravelPlanner.Shared.Common;
 using TravelPlanner.Shared.Enums;
@@ -41,13 +42,15 @@ public class SharingClientService : ISharingClientService
         }
 
         var token = result.Token!;
+        var shareUrl = $"{_publicBaseUrl}/shared/{token.Token}";
         var response = new ShareResponseDto
         {
             Token = token.Token,
             TravelPlanId = token.TravelPlanId,
             AccessLevel = token.AccessLevel,
             ExpiresAtUtc = token.ExpiresAtUtc,
-            ShareUrl = $"{_publicBaseUrl}/shared/{token.Token}"
+            ShareUrl = shareUrl,
+            QrCodeDataUrl = GenerateQrCodeDataUrl(shareUrl)
         };
 
         return Result<ShareResponseDto>.Success(response);
@@ -107,13 +110,18 @@ public class SharingClientService : ISharingClientService
     {
         var proxy = ServiceProxy.Create<ISharingService>(_sharingServiceUri);
         var tokens = await proxy.GetForPlanAsync(travelPlanId);
-        var responses = tokens.Select(t => new ShareResponseDto
+        var responses = tokens.Select(t =>
         {
-            Token = t.Token,
-            TravelPlanId = t.TravelPlanId,
-            AccessLevel = t.AccessLevel,
-            ExpiresAtUtc = t.ExpiresAtUtc,
-            ShareUrl = $"{_publicBaseUrl}/shared/{t.Token}"
+            var shareUrl = $"{_publicBaseUrl}/shared/{t.Token}";
+            return new ShareResponseDto
+            {
+                Token = t.Token,
+                TravelPlanId = t.TravelPlanId,
+                AccessLevel = t.AccessLevel,
+                ExpiresAtUtc = t.ExpiresAtUtc,
+                ShareUrl = shareUrl,
+                QrCodeDataUrl = GenerateQrCodeDataUrl(shareUrl)
+            };
         }).ToList();
         return Result<List<ShareResponseDto>>.Success(responses);
     }
@@ -131,5 +139,14 @@ public class SharingClientService : ISharingClientService
 
         await proxy.RevokeAsync(token);
         return Result<bool>.Success(true);
+    }
+
+    private static string GenerateQrCodeDataUrl(string value)
+    {
+        using var generator = new QRCodeGenerator();
+        using var data = generator.CreateQrCode(value, QRCodeGenerator.ECCLevel.Q);
+        var qrCode = new PngByteQRCode(data);
+        var pngBytes = qrCode.GetGraphic(20);
+        return "data:image/png;base64," + Convert.ToBase64String(pngBytes);
     }
 }

@@ -9,4 +9,5 @@ public class ShareResponseDto
     public ShareAccessLevel AccessLevel { get; set; }
     public DateTime ExpiresAtUtc { get; set; }
     public string ShareUrl { get; set; } = string.Empty;
+    public string QrCodeDataUrl { get; set; } = string.Empty;
 }

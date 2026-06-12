@@ -77,12 +77,38 @@ public class SharedEditController : ControllerBase
         return result.IsSuccess ? NoContent() : MapError(result.Error!);
     }
 
+    [HttpPost("expenses")]
+    public async Task<IActionResult> CreateExpense(string token, [FromBody] ExpenseRequestDto request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var result = await _sharedEditService.CreateExpenseAsync(token, request);
+        return result.IsSuccess ? Ok(result.Value) : MapError(result.Error!);
+    }
+
+    [HttpPut("expenses/{id}")]
+    public async Task<IActionResult> UpdateExpense(string token, int id, [FromBody] ExpenseRequestDto request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var result = await _sharedEditService.UpdateExpenseAsync(token, id, request);
+        return result.IsSuccess ? Ok(result.Value) : MapError(result.Error!);
+    }
+
+    [HttpDelete("expenses/{id}")]
+    public async Task<IActionResult> DeleteExpense(string token, int id)
+    {
+        var result = await _sharedEditService.DeleteExpenseAsync(token, id);
+        return result.IsSuccess ? NoContent() : MapError(result.Error!);
+    }
+
     private IActionResult MapError(Error error) => error.Code switch
     {
         "Sharing.NotFound"           => NotFound(new { message = error.Message }),
         "TravelPlan.NotFound"        => NotFound(new { message = error.Message }),
         "Destination.NotFound"       => NotFound(new { message = error.Message }),
         "Activity.NotFound"          => NotFound(new { message = error.Message }),
+        "Expense.NotFound"           => NotFound(new { message = error.Message }),
         "Sharing.EditAccessRequired" => StatusCode(403, new { message = error.Message }),
         "Sharing.Expired"            => StatusCode(410, new { message = error.Message }),
         _                            => BadRequest(new { message = error.Message })

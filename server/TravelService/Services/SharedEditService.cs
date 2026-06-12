@@ -168,4 +168,67 @@ public class SharedEditService : ISharedEditService
 
         return Result<bool>.Success(true);
     }
+
+    public async Task<Result<ExpenseDto>> CreateExpenseAsync(string token, ExpenseRequestDto request)
+    {
+        var tokenResult = await _sharingClient.ValidateEditShareAsync(token);
+        if (tokenResult.IsFailure)
+            return Result<ExpenseDto>.Failure(tokenResult.Error!);
+
+        var planId = tokenResult.Value!.TravelPlanId;
+
+        if (request.Amount < 0)
+            return Result<ExpenseDto>.Failure(TravelServiceErrors.ExpenseErrors.InvalidAmount);
+
+        var expense = _mapper.Map<Expense>(request);
+        expense.TravelPlanId = planId;
+
+        _context.Expenses.Add(expense);
+        await _context.SaveChangesAsync();
+
+        return Result<ExpenseDto>.Success(_mapper.Map<ExpenseDto>(expense));
+    }
+
+    public async Task<Result<ExpenseDto>> UpdateExpenseAsync(string token, int expenseId, ExpenseRequestDto request)
+    {
+        var tokenResult = await _sharingClient.ValidateEditShareAsync(token);
+        if (tokenResult.IsFailure)
+            return Result<ExpenseDto>.Failure(tokenResult.Error!);
+
+        var planId = tokenResult.Value!.TravelPlanId;
+
+        var expense = await _context.Expenses
+            .FirstOrDefaultAsync(e => e.Id == expenseId && e.TravelPlanId == planId);
+
+        if (expense == null)
+            return Result<ExpenseDto>.Failure(TravelServiceErrors.ExpenseErrors.NotFound);
+
+        if (request.Amount < 0)
+            return Result<ExpenseDto>.Failure(TravelServiceErrors.ExpenseErrors.InvalidAmount);
+
+        _mapper.Map(request, expense);
+        await _context.SaveChangesAsync();
+
+        return Result<ExpenseDto>.Success(_mapper.Map<ExpenseDto>(expense));
+    }
+
+    public async Task<Result<bool>> DeleteExpenseAsync(string token, int expenseId)
+    {
+        var tokenResult = await _sharingClient.ValidateEditShareAsync(token);
+        if (tokenResult.IsFailure)
+            return Result<bool>.Failure(tokenResult.Error!);
+
+        var planId = tokenResult.Value!.TravelPlanId;
+
+        var expense = await _context.Expenses
+            .FirstOrDefaultAsync(e => e.Id == expenseId && e.TravelPlanId == planId);
+
+        if (expense == null)
+            return Result<bool>.Failure(TravelServiceErrors.ExpenseErrors.NotFound);
+
+        _context.Expenses.Remove(expense);
+        await _context.SaveChangesAsync();
+
+        return Result<bool>.Success(true);
+    }
 }

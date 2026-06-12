@@ -32,7 +32,7 @@ public class SharesController : ControllerBase
         var planError = await _ownershipValidator.ValidateAsync(userId.Value, planId);
         if (planError != null) return MapError(planError);
 
-        var result = await _sharingClientService.CreateShareAsync(planId, request.AccessLevel, request.ExpiresAtUtc);
+        var result = await _sharingClientService.CreateShareAsync(planId, request.AccessLevel.Value, request.ExpiresAtUtc);
         return result.IsSuccess ? Ok(result.Value) : MapError(result.Error!);
     }
 

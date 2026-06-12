@@ -1,3 +1,5 @@
+using TravelPlanner.Shared.Enums;
+
 namespace TravelService.Dtos;
 
 public class SharedTravelPlanDto
@@ -17,6 +19,6 @@ public class SharedTravelPlanDto
     public List<ChecklistItemDto> ChecklistItems { get; set; } = new();
     public BudgetSummaryDto BudgetSummary { get; set; } = new();
 
-    public string AccessLevel { get; set; } = string.Empty;
+    public ShareAccessLevel AccessLevel { get; set; }
     public DateTime ExpiresAtUtc { get; set; }
 }

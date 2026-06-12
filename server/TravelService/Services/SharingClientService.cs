@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 using TravelPlanner.Shared;
 using TravelPlanner.Shared.Common;
+using TravelPlanner.Shared.Enums;
 using TravelPlanner.Shared.Sharing;
 using TravelService.Dtos;
 
@@ -23,7 +24,7 @@ public class SharingClientService : ISharingClientService
             .TrimEnd('/');
     }
 
-    public async Task<Result<ShareResponseDto>> CreateShareAsync(int travelPlanId, string accessLevel, DateTime expiresAtUtc)
+    public async Task<Result<ShareResponseDto>> CreateShareAsync(int travelPlanId, ShareAccessLevel accessLevel, DateTime expiresAtUtc)
     {
         var proxy = ServiceProxy.Create<ISharingService>(_sharingServiceUri);
         var result = await proxy.CreateAsync(travelPlanId, accessLevel, expiresAtUtc);
@@ -78,7 +79,7 @@ public class SharingClientService : ISharingClientService
         if (result.IsFailure)
             return result;
 
-        if (!string.Equals(result.Value!.AccessLevel, "Edit", StringComparison.OrdinalIgnoreCase))
+        if (result.Value!.AccessLevel != ShareAccessLevel.Edit)
             return Result<ShareTokenDto>.Failure(new Error(
                 "Sharing.EditAccessRequired",
                 "This share link does not have edit access."));

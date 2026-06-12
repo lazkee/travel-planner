@@ -5,6 +5,7 @@ using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
 using TravelPlanner.Shared;
+using TravelPlanner.Shared.Enums;
 using TravelPlanner.Shared.Sharing;
 
 namespace SharingService;
@@ -13,17 +14,14 @@ internal sealed class SharingService : StatefulService, ISharingService
 {
     private const string DictionaryName = "shareTokens";
 
-    private static readonly HashSet<string> ValidAccessLevels =
-        new(StringComparer.OrdinalIgnoreCase) { "View", "Edit" };
-
     public SharingService(StatefulServiceContext context) : base(context) { }
 
     protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners()
         => this.CreateServiceRemotingReplicaListeners();
 
-    public async Task<ShareCreateResult> CreateAsync(int travelPlanId, string accessLevel, DateTime expiresAtUtc)
+    public async Task<ShareCreateResult> CreateAsync(int travelPlanId, ShareAccessLevel accessLevel, DateTime expiresAtUtc)
     {
-        if (!ValidAccessLevels.Contains(accessLevel))
+        if (!Enum.IsDefined(typeof(ShareAccessLevel), accessLevel))
             return new ShareCreateResult { IsSuccess = false, ErrorCode = "Sharing.InvalidAccessLevel" };
 
         if (expiresAtUtc <= DateTime.UtcNow)

@@ -115,7 +115,7 @@ function TripCard({
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-        <Button disabled={!onView} onClick={() => onView?.(plan)} variant="secondary">
+        <Button onClick={() => onView?.(plan)} variant="secondary">
           View
         </Button>
         {!readonly ? (

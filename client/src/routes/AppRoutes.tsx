@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import LoginPage from '../features/auth/pages/LoginPage'
 import RegisterPage from '../features/auth/pages/RegisterPage'
 import MyTripsPage from '../features/trips/pages/MyTripsPage'
+import TripDetailsPage from '../features/trips/pages/TripDetailsPage'
 import ProtectedRoute from './ProtectedRoute'
 
 function DefaultRedirect() {
@@ -27,6 +28,7 @@ function AppRoutes() {
         <Route path="/app" element={<AppLayout />}>
           <Route index element={<Navigate to="/app/trips" replace />} />
           <Route path="trips" element={<MyTripsPage />} />
+          <Route path="trips/:planId" element={<TripDetailsPage />} />
         </Route>
       </Route>
 

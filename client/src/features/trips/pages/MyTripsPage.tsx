@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog'
@@ -19,6 +20,7 @@ import type {
 } from '../types/travelPlan.types'
 
 function MyTripsPage() {
+  const navigate = useNavigate()
   const [plans, setPlans] = useState<TravelPlanDto[]>([])
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -53,6 +55,10 @@ function MyTripsPage() {
   function handleEditClick(plan: TravelPlanDto) {
     setEditingPlan(plan)
     setIsFormModalOpen(true)
+  }
+
+  function handleViewClick(plan: TravelPlanDto) {
+    navigate(`/app/trips/${plan.id}`)
   }
 
   function handleCloseFormModal() {
@@ -137,6 +143,7 @@ function MyTripsPage() {
               key={plan.id}
               onDelete={setDeletingPlan}
               onEdit={handleEditClick}
+              onView={handleViewClick}
               plan={plan}
             />
           ))}

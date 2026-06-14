@@ -65,6 +65,12 @@ export async function getTravelPlans(): Promise<TravelPlanDto[]> {
   return plans.map(normalizeTravelPlan)
 }
 
+export async function getTravelPlanById(id: number): Promise<TravelPlanDto> {
+  const response = await travelServiceClient.get(`/api/travel-plans/${id}`)
+
+  return normalizeTravelPlan(response.data)
+}
+
 export async function createTravelPlan(
   request: TravelPlanRequestDto,
 ): Promise<TravelPlanDto> {

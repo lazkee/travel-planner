@@ -3,6 +3,7 @@ using TravelPlanner.Shared.Common;
 using TravelService.Common;
 using TravelService.Data;
 using TravelService.Dtos;
+using TravelService.Models;
 
 namespace TravelService.Services;
 
@@ -22,15 +23,21 @@ public class BudgetSummaryService : IBudgetSummaryService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<BudgetSummaryDto>.Failure(planError);
 
-        var plan = await _context.TravelPlans.FindAsync(planId);
+        var plan = await _context.TravelPlans
+            .Include(tp => tp.Expenses)
+            .Include(tp => tp.Activities)
+            .FirstOrDefaultAsync(tp => tp.Id == planId );
 
-        var expenses = await _context.Expenses
-            .Where(e => e.TravelPlanId == planId)
-            .ToListAsync();
+        if (plan == null)
+            return Result<BudgetSummaryDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
 
-        var totalExpenses = expenses.Sum(e => e.Amount);
+        var expenseTotal = plan.Expenses.Sum(e => e.Amount);
+        var activityEstimates = plan.Activities
+            .Where(a => a.EstimatedCost > 0 && a.Status != ActivityStatus.Cancelled)
+            .Sum(a => a.EstimatedCost);
+        var totalSpent = expenseTotal + activityEstimates;
 
-        var categories = expenses
+        var categories = plan.Expenses
             .GroupBy(e => e.Category)
             .Select(g => new BudgetCategorySummaryDto
             {
@@ -39,12 +46,29 @@ public class BudgetSummaryService : IBudgetSummaryService
             })
             .ToList();
 
+        if (activityEstimates > 0)
+        {
+            var activityCategory = categories.FirstOrDefault(c => c.Category == ExpenseCategory.Activities);
+            if (activityCategory == null)
+            {
+                categories.Add(new BudgetCategorySummaryDto
+                {
+                    Category = ExpenseCategory.Activities,
+                    TotalAmount = activityEstimates
+                });
+            }
+            else
+            {
+                activityCategory.TotalAmount += activityEstimates;
+            }
+        }
+
         var summary = new BudgetSummaryDto
         {
             TravelPlanId = planId,
-            Budget = plan!.Budget,
-            TotalExpenses = totalExpenses,
-            RemainingBudget = plan.Budget - totalExpenses,
+            Budget = plan.Budget,
+            TotalExpenses = totalSpent,
+            RemainingBudget = plan.Budget - totalSpent,
             Categories = categories
         };
 

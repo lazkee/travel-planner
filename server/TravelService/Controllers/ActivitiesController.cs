@@ -52,7 +52,7 @@ public class ActivitiesController : ControllerBase
 
         return CreatedAtAction(nameof(GetById), new { planId, id = result.Value!.Id }, result.Value);
     }
-
+    
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int planId, int id, [FromBody] ActivityRequestDto request)
     {

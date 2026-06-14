@@ -7,6 +7,7 @@ import EmptyState from '../../../components/ui/EmptyState'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import Tabs, { type TabItem } from '../../../components/ui/Tabs'
+import DestinationsTab from '../../destinations/components/DestinationsTab'
 import { getBudgetSummary } from '../api/budgetSummary.api'
 import { getTravelPlanById } from '../api/travelPlans.api'
 import OverviewTab from '../components/OverviewTab'
@@ -131,7 +132,12 @@ function TripDetailsPage() {
                   plan={plan}
                 />
               ) : null}
-              {activeTab !== 'overview' && selectedTab ? (
+              {activeTab === 'destinations' ? (
+                <DestinationsTab planId={plan.id} />
+              ) : null}
+              {activeTab !== 'overview' &&
+              activeTab !== 'destinations' &&
+              selectedTab ? (
                 <EmptyState
                   description={`${selectedTab.label} will be added in a future feature step.`}
                   title={`${selectedTab.label} coming next`}

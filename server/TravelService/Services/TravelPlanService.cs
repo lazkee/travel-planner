@@ -13,43 +13,42 @@ public class TravelPlanService : ITravelPlanService
     private readonly TravelDbContext _context;
     private readonly IMapper _mapper;
     private readonly ISharingClientService _sharingClient;
+    private readonly ITravelPlanOwnershipValidator _ownershipValidator;
 
-    public TravelPlanService(TravelDbContext context, IMapper mapper, ISharingClientService sharingClient)
+    public TravelPlanService(
+        TravelDbContext context,
+        IMapper mapper,
+        ISharingClientService sharingClient,
+        ITravelPlanOwnershipValidator ownershipValidator)
     {
         _context = context;
         _mapper = mapper;
         _sharingClient = sharingClient;
+        _ownershipValidator = ownershipValidator;
     }
 
     public async Task<Result<List<TravelPlanDto>>> GetUserPlansAsync(int userId)
     {
-        var plans = await _context.TravelPlans
-            .Where(p => p.UserId == userId)
+        var query = _context.TravelPlans.AsQueryable();
+
+        if (!_ownershipValidator.CanAccessAllPlans())
+            query = query.Where(p => p.UserId == userId);
+
+        var plans = await query
+            .OrderBy(p => p.Id)
             .ToListAsync();
 
         return Result<List<TravelPlanDto>>.Success(_mapper.Map<List<TravelPlanDto>>(plans));
     }
 
-    public async Task<Result<List<AdminTravelPlanDto>>> GetAllForAdminAsync()
-    {
-        var plans = await _context.TravelPlans
-            .OrderBy(p => p.Id)
-            .ToListAsync();
-
-        return Result<List<AdminTravelPlanDto>>.Success(plans.Select(BuildAdminDto).ToList());
-    }
-
     public async Task<Result<TravelPlanDto>> GetByIdAsync(int userId, int planId)
     {
+        var planError = await _ownershipValidator.ValidateAsync(userId, planId);
+        if (planError != null) return Result<TravelPlanDto>.Failure(planError);
+
         var plan = await _context.TravelPlans.FindAsync(planId);
 
-        if (plan == null)
-            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
-
-        if (plan.UserId != userId)
-            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.Forbidden);
-
-        return Result<TravelPlanDto>.Success(_mapper.Map<TravelPlanDto>(plan));
+        return Result<TravelPlanDto>.Success(_mapper.Map<TravelPlanDto>(plan!));
     }
 
     public async Task<Result<TravelPlanDto>> CreateAsync(int userId, TravelPlanRequestDto request)
@@ -72,19 +71,16 @@ public class TravelPlanService : ITravelPlanService
 
     public async Task<Result<TravelPlanDto>> UpdateAsync(int userId, int planId, TravelPlanRequestDto request)
     {
-        var plan = await _context.TravelPlans.FindAsync(planId);
-
-        if (plan == null)
-            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
-
-        if (plan.UserId != userId)
-            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.Forbidden);
+        var planError = await _ownershipValidator.ValidateAsync(userId, planId);
+        if (planError != null) return Result<TravelPlanDto>.Failure(planError);
 
         if (request.EndDate < request.StartDate)
             return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.InvalidDateRange);
 
         if (request.Budget < 0)
             return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.InvalidBudget);
+
+        var plan = await _context.TravelPlans.FindAsync(planId);
 
         _mapper.Map(request, plan);
         await _context.SaveChangesAsync();
@@ -94,36 +90,16 @@ public class TravelPlanService : ITravelPlanService
 
     public async Task<Result<bool>> DeleteAsync(int userId, int planId)
     {
+        var planError = await _ownershipValidator.ValidateAsync(userId, planId);
+        if (planError != null) return Result<bool>.Failure(planError);
+
         var plan = await _context.TravelPlans.FindAsync(planId);
-
-        if (plan == null)
-            return Result<bool>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
-
-        if (plan.UserId != userId)
-            return Result<bool>.Failure(TravelServiceErrors.TravelPlanErrors.Forbidden);
 
         var revokeResult = await _sharingClient.RevokeSharesForPlanAsync(planId);
         if (revokeResult.IsFailure)
             return Result<bool>.Failure(revokeResult.Error!);
 
-        _context.TravelPlans.Remove(plan);
-        await _context.SaveChangesAsync();
-
-        return Result<bool>.Success(true);
-    }
-
-    public async Task<Result<bool>> DeleteAsAdminAsync(int planId)
-    {
-        var plan = await _context.TravelPlans.FindAsync(planId);
-
-        if (plan == null)
-            return Result<bool>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
-
-        var revokeResult = await _sharingClient.RevokeSharesForPlanAsync(planId);
-        if (revokeResult.IsFailure)
-            return Result<bool>.Failure(revokeResult.Error!);
-
-        _context.TravelPlans.Remove(plan);
+        _context.TravelPlans.Remove(plan!);
         await _context.SaveChangesAsync();
 
         return Result<bool>.Success(true);
@@ -167,16 +143,4 @@ public class TravelPlanService : ITravelPlanService
         });
     }
 
-    private static AdminTravelPlanDto BuildAdminDto(TravelPlan plan) => new()
-    {
-        Id = plan.Id,
-        UserId = plan.UserId,
-        Name = plan.Name,
-        Description = plan.Description,
-        StartDate = plan.StartDate,
-        EndDate = plan.EndDate,
-        Budget = plan.Budget,
-        Notes = plan.Notes,
-        CreatedAt = plan.CreatedAt
-    };
 }

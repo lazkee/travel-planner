@@ -148,6 +148,7 @@ internal sealed class TravelService : StatelessService, ITravelDataCleanupServic
                 sqlOptions => sqlOptions.MigrationsHistoryTable("__TravelServiceMigrationsHistory")));
 
         services.AddAutoMapper(typeof(TravelPlanProfile).Assembly);
+        services.AddHttpContextAccessor();
         services.AddScoped<ITravelPlanOwnershipValidator, TravelPlanOwnershipValidator>();
         services.AddScoped<ITravelPlanService, TravelPlanService>();
         services.AddScoped<IDestinationService, DestinationService>();

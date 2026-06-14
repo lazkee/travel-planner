@@ -26,7 +26,7 @@ public class BudgetSummaryService : IBudgetSummaryService
         var plan = await _context.TravelPlans
             .Include(tp => tp.Expenses)
             .Include(tp => tp.Activities)
-            .FirstOrDefaultAsync(tp => tp.Id == planId );
+            .FirstOrDefaultAsync(tp => tp.Id == planId);
 
         if (plan == null)
             return Result<BudgetSummaryDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);

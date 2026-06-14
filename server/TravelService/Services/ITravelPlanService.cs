@@ -11,6 +11,4 @@ public interface ITravelPlanService
     Task<Result<TravelPlanDto>> UpdateAsync(int userId, int planId, TravelPlanRequestDto request);
     Task<Result<bool>> DeleteAsync(int userId, int planId);
     Task<Result<UserTravelDataCleanupResultDto>> DeleteAllForUserAsync(int userId);
-    Task<Result<List<AdminTravelPlanDto>>> GetAllForAdminAsync();
-    Task<Result<bool>> DeleteAsAdminAsync(int planId);
 }

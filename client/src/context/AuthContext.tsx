@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -19,6 +20,7 @@ import {
   type RegisterRequest,
   type UserRole,
 } from '../features/auth/types/auth.types'
+import { getJwtExpirationTime, isJwtExpired } from '../utils/jwtUtils'
 
 type AuthContextValue = {
   token: string | null
@@ -32,6 +34,7 @@ type AuthContextValue = {
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
+const AUTH_LOGOUT_EVENT = 'auth:logout'
 
 function getStoredUser(): AuthUser | null {
   const storedValue = window.localStorage.getItem(AUTH_USER_STORAGE_KEY)
@@ -71,7 +74,7 @@ function getStoredAuth() {
   const token = getStoredToken()
   const user = getStoredUser()
 
-  if (!token || !user) {
+  if (!token || !user || isJwtExpired(token)) {
     window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
     window.localStorage.removeItem(AUTH_USER_STORAGE_KEY)
 
@@ -132,6 +135,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     persistAuth(null)
   }, [persistAuth])
+
+  useEffect(() => {
+    function handleAuthLogout() {
+      logout()
+    }
+
+    window.addEventListener(AUTH_LOGOUT_EVENT, handleAuthLogout)
+
+    return () => {
+      window.removeEventListener(AUTH_LOGOUT_EVENT, handleAuthLogout)
+    }
+  }, [logout])
+
+  useEffect(() => {
+    if (!auth.token) {
+      return
+    }
+
+    const expirationTime = getJwtExpirationTime(auth.token)
+
+    if (!expirationTime || isJwtExpired(auth.token)) {
+      logout()
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      logout()
+    }, expirationTime - Date.now())
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [auth.token, logout])
 
   const value = useMemo(
     () => ({

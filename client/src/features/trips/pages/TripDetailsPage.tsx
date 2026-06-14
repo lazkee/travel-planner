@@ -7,6 +7,7 @@ import EmptyState from '../../../components/ui/EmptyState'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import Tabs, { type TabItem } from '../../../components/ui/Tabs'
+import ActivitiesTab from '../../activities/components/ActivitiesTab'
 import DestinationsTab from '../../destinations/components/DestinationsTab'
 import { getBudgetSummary } from '../api/budgetSummary.api'
 import { getTravelPlanById } from '../api/travelPlans.api'
@@ -47,24 +48,18 @@ function TripDetailsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const planId = parsePlanId(planIdParam)
 
-  const loadPlan = useCallback(async () => {
-    setIsLoading(true)
-    setError('')
-
+  const refreshTripDetails = useCallback(async () => {
     if (!planId) {
       setPlan(null)
       setBudgetSummary(null)
       setError('Invalid trip id.')
       setIsBudgetSummaryLoading(false)
-      setIsLoading(false)
       return
     }
 
     try {
-      setBudgetSummary(null)
       const travelPlan = await getTravelPlanById(planId)
       setPlan(travelPlan)
-      setIsLoading(false)
       setIsBudgetSummaryLoading(true)
 
       try {
@@ -77,11 +72,19 @@ function TripDetailsPage() {
       setPlan(null)
       setBudgetSummary(null)
       setError(getApiErrorMessage(requestError))
-      setIsLoading(false)
     } finally {
       setIsBudgetSummaryLoading(false)
     }
   }, [planId])
+
+  const loadPlan = useCallback(async () => {
+    setIsLoading(true)
+    setError('')
+    setBudgetSummary(null)
+
+    await refreshTripDetails()
+    setIsLoading(false)
+  }, [refreshTripDetails])
 
   useEffect(() => {
     void loadPlan()
@@ -135,8 +138,15 @@ function TripDetailsPage() {
               {activeTab === 'destinations' ? (
                 <DestinationsTab planId={plan.id} />
               ) : null}
+              {activeTab === 'activities' ? (
+                <ActivitiesTab
+                  onActivitiesChanged={refreshTripDetails}
+                  planId={plan.id}
+                />
+              ) : null}
               {activeTab !== 'overview' &&
               activeTab !== 'destinations' &&
+              activeTab !== 'activities' &&
               selectedTab ? (
                 <EmptyState
                   description={`${selectedTab.label} will be added in a future feature step.`}

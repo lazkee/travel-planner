@@ -29,12 +29,18 @@ public class TravelPlanService : ITravelPlanService
 
     public async Task<Result<List<TravelPlanDto>>> GetUserPlansAsync(int userId)
     {
-        var query = _context.TravelPlans.AsQueryable();
+        var plans = await _context.TravelPlans
+            .Where(p => p.UserId == userId)
+            .OrderBy(p => p.Id)
+            .ToListAsync();
 
-        if (!_ownershipValidator.CanAccessAllPlans())
-            query = query.Where(p => p.UserId == userId);
+        return Result<List<TravelPlanDto>>.Success(_mapper.Map<List<TravelPlanDto>>(plans));
+    }
 
-        var plans = await query
+    public async Task<Result<List<TravelPlanDto>>> GetAdminUserTripsAsync(int currentAdminId)
+    {
+        var plans = await _context.TravelPlans
+            .Where(p => p.UserId != currentAdminId)
             .OrderBy(p => p.Id)
             .ToListAsync();
 

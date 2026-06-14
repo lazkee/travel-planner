@@ -29,6 +29,17 @@ public class TravelPlansController : ControllerBase
         return result.IsSuccess ? Ok(result.Value) : MapError(result.Error!);
     }
 
+    [HttpGet("~/api/admin/user-trips")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAdminUserTrips()
+    {
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
+
+        var result = await _travelPlanService.GetAdminUserTripsAsync(userId.Value);
+        return result.IsSuccess ? Ok(result.Value) : MapError(result.Error!);
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {

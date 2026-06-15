@@ -1,10 +1,14 @@
+import type { ReactNode } from 'react'
 import Card from '../../../components/ui/Card'
 import type { BudgetSummaryDto } from '../types/budgetSummary.types'
 import type { TravelPlanDto } from '../types/travelPlan.types'
 import BudgetProgress from './BudgetProgress'
 
 type TripHeaderProps = {
+  aside?: ReactNode
+  badge?: ReactNode
   budgetSummary: BudgetSummaryDto | null
+  notice?: ReactNode
   isBudgetSummaryLoading?: boolean
   plan: TravelPlanDto
 }
@@ -62,7 +66,10 @@ function MetricItem({
 }
 
 function TripHeader({
+  aside,
+  badge,
   budgetSummary,
+  notice,
   isBudgetSummaryLoading = false,
   plan,
 }: TripHeaderProps) {
@@ -73,14 +80,24 @@ function TripHeader({
 
   return (
     <Card className="p-6">
-      <div className="min-w-0">
-        <p className="mb-2 inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-extrabold text-blue-700">
-          Active plan
-        </p>
-        <h1 className="m-0 text-3xl font-bold leading-tight text-slate-900">
-          {plan.name}
-        </h1>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            {badge ?? (
+              <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-extrabold text-blue-700">
+                Active plan
+              </span>
+            )}
+          </div>
+          <h1 className="m-0 text-3xl font-bold leading-tight text-slate-900">
+            {plan.name}
+          </h1>
+        </div>
+
+        {aside ? <div>{aside}</div> : null}
       </div>
+
+      {notice ? <div className="mt-4">{notice}</div> : null}
 
       <dl className="mt-4 grid gap-3 sm:grid-cols-2">
         <MetricItem

@@ -27,6 +27,10 @@ function getValidationMessages(data: unknown): string | null {
 
 export function getApiErrorMessage(error: unknown): string {
   if (!axios.isAxiosError(error)) {
+    if (error instanceof Error && error.message) {
+      return error.message
+    }
+
     return 'Something went wrong.'
   }
 

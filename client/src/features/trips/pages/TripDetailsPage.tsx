@@ -3,18 +3,18 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import Card from '../../../components/ui/Card'
-import EmptyState from '../../../components/ui/EmptyState'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
-import Tabs, { type TabItem } from '../../../components/ui/Tabs'
+import type { TabItem } from '../../../components/ui/Tabs'
 import ActivitiesTab from '../../activities/components/ActivitiesTab'
 import ChecklistTab from '../../checklist/components/ChecklistTab'
 import DestinationsTab from '../../destinations/components/DestinationsTab'
 import ExpensesTab from '../../expenses/components/ExpensesTab'
+import ShareTab from '../../sharing/components/ShareTab'
 import { getBudgetSummary } from '../api/budgetSummary.api'
 import { getTravelPlanById } from '../api/travelPlans.api'
 import OverviewTab from '../components/OverviewTab'
-import TripHeader from '../components/TripHeader'
+import TripDetailsView from '../components/TripDetailsView'
 import type { BudgetSummaryDto } from '../types/budgetSummary.types'
 import type { TravelPlanDto } from '../types/travelPlan.types'
 
@@ -96,16 +96,8 @@ function TripDetailsPage() {
     navigate('/app/trips')
   }
 
-  const selectedTab = tabs.find((tab) => tab.id === activeTab)
-
   return (
     <section className="grid gap-6">
-      <div>
-        <Button onClick={handleBackClick} variant="secondary">
-          Back to trips
-        </Button>
-      </div>
-
       {isLoading ? <LoadingSpinner label="Loading trip..." /> : null}
 
       {!isLoading && error ? (
@@ -120,56 +112,43 @@ function TripDetailsPage() {
       ) : null}
 
       {!isLoading && !error && plan ? (
-        <>
-          <TripHeader
-            budgetSummary={budgetSummary}
-            isBudgetSummaryLoading={isBudgetSummaryLoading}
-            plan={plan}
-          />
-
-          <Card className="overflow-hidden">
-            <Tabs activeTab={activeTab} onChange={setActiveTab} tabs={tabs} />
-            <div className="p-5">
-              {activeTab === 'overview' ? (
-                <OverviewTab
-                  budgetSummary={budgetSummary}
-                  isBudgetSummaryLoading={isBudgetSummaryLoading}
-                  plan={plan}
-                />
-              ) : null}
-              {activeTab === 'destinations' ? (
-                <DestinationsTab planId={plan.id} />
-              ) : null}
-              {activeTab === 'activities' ? (
-                <ActivitiesTab
-                  onActivitiesChanged={refreshTripDetails}
-                  planId={plan.id}
-                />
-              ) : null}
-              {activeTab === 'expenses' ? (
-                <ExpensesTab
-                  budgetSummary={budgetSummary}
-                  onExpensesChanged={refreshTripDetails}
-                  planId={plan.id}
-                />
-              ) : null}
-              {activeTab === 'checklist' ? (
-                <ChecklistTab planId={plan.id} />
-              ) : null}
-              {activeTab !== 'overview' &&
-              activeTab !== 'destinations' &&
-              activeTab !== 'activities' &&
-              activeTab !== 'expenses' &&
-              activeTab !== 'checklist' &&
-              selectedTab ? (
-                <EmptyState
-                  description={`${selectedTab.label} will be added in a future feature step.`}
-                  title={`${selectedTab.label} coming next`}
-                />
-              ) : null}
-            </div>
-          </Card>
-        </>
+        <TripDetailsView
+          activeTab={activeTab}
+          backButtonLabel="Back to trips"
+          budgetSummary={budgetSummary}
+          isBudgetSummaryLoading={isBudgetSummaryLoading}
+          onBack={handleBackClick}
+          onTabChange={setActiveTab}
+          plan={plan}
+          showBackButton
+          tabs={tabs}
+        >
+          {activeTab === 'overview' ? (
+            <OverviewTab
+              budgetSummary={budgetSummary}
+              isBudgetSummaryLoading={isBudgetSummaryLoading}
+              plan={plan}
+            />
+          ) : null}
+          {activeTab === 'destinations' ? (
+            <DestinationsTab planId={plan.id} />
+          ) : null}
+          {activeTab === 'activities' ? (
+            <ActivitiesTab
+              onActivitiesChanged={refreshTripDetails}
+              planId={plan.id}
+            />
+          ) : null}
+          {activeTab === 'expenses' ? (
+            <ExpensesTab
+              budgetSummary={budgetSummary}
+              onExpensesChanged={refreshTripDetails}
+              planId={plan.id}
+            />
+          ) : null}
+          {activeTab === 'checklist' ? <ChecklistTab planId={plan.id} /> : null}
+          {activeTab === 'share' ? <ShareTab planId={plan.id} /> : null}
+        </TripDetailsView>
       ) : null}
     </section>
   )

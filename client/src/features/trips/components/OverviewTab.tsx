@@ -5,6 +5,7 @@ import type { TravelPlanDto } from '../types/travelPlan.types'
 type OverviewTabProps = {
   budgetSummary: BudgetSummaryDto | null
   isBudgetSummaryLoading?: boolean
+  ownerLabel?: string
   plan: TravelPlanDto
 }
 
@@ -67,6 +68,7 @@ function DetailItem({
 function OverviewTab({
   budgetSummary,
   isBudgetSummaryLoading = false,
+  ownerLabel,
   plan,
 }: OverviewTabProps) {
   const budget = budgetSummary?.budget ?? plan.budget
@@ -104,6 +106,12 @@ function OverviewTab({
         </div>
 
         <dl className="grid gap-4 rounded-lg border border-slate-200 p-4 sm:grid-cols-2 lg:grid-cols-1">
+          {ownerLabel ? (
+            <DetailItem
+              label="Owner"
+              value={ownerLabel.replace('Owner: ', '')}
+            />
+          ) : null}
           <DetailItem label="Start date" value={formatDate(plan.startDate)} />
           <DetailItem label="End date" value={formatDate(plan.endDate)} />
           <DetailItem

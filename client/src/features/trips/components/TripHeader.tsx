@@ -5,11 +5,13 @@ import type { TravelPlanDto } from '../types/travelPlan.types'
 import BudgetProgress from './BudgetProgress'
 
 type TripHeaderProps = {
+  actions?: ReactNode
   aside?: ReactNode
   badge?: ReactNode
   budgetSummary: BudgetSummaryDto | null
   notice?: ReactNode
   isBudgetSummaryLoading?: boolean
+  ownerLabel?: string
   plan: TravelPlanDto
 }
 
@@ -66,11 +68,13 @@ function MetricItem({
 }
 
 function TripHeader({
+  actions,
   aside,
   badge,
   budgetSummary,
   notice,
   isBudgetSummaryLoading = false,
+  ownerLabel,
   plan,
 }: TripHeaderProps) {
   const durationInDays = getDurationInDays(plan.startDate, plan.endDate)
@@ -88,13 +92,23 @@ function TripHeader({
                 Active plan
               </span>
             )}
+            {ownerLabel ? (
+              <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-600">
+                {ownerLabel}
+              </span>
+            ) : null}
           </div>
           <h1 className="m-0 text-3xl font-bold leading-tight text-slate-900">
             {plan.name}
           </h1>
         </div>
 
-        {aside ? <div>{aside}</div> : null}
+        {aside || actions ? (
+          <div className="flex flex-col gap-3 lg:items-end">
+            {aside ? <div>{aside}</div> : null}
+            {actions ? <div>{actions}</div> : null}
+          </div>
+        ) : null}
       </div>
 
       {notice ? <div className="mt-4">{notice}</div> : null}

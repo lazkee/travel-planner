@@ -11,12 +11,14 @@ type TripDetailsViewProps = {
   backButtonLabel?: string
   budgetSummary: BudgetSummaryDto | null
   children: ReactNode
+  headerActions?: ReactNode
   headerAside?: ReactNode
   headerBadge?: ReactNode
   headerNotice?: ReactNode
   isBudgetSummaryLoading?: boolean
   onBack?: () => void
   onTabChange: (tabId: string) => void
+  ownerLabel?: string
   plan: TravelPlanDto
   showBackButton?: boolean
   tabs: TabItem[]
@@ -27,12 +29,14 @@ function TripDetailsView({
   backButtonLabel = 'Back to trips',
   budgetSummary,
   children,
+  headerActions,
   headerAside,
   headerBadge,
   headerNotice,
   isBudgetSummaryLoading = false,
   onBack,
   onTabChange,
+  ownerLabel,
   plan,
   showBackButton = false,
   tabs,
@@ -48,11 +52,13 @@ function TripDetailsView({
       ) : null}
 
       <TripHeader
+        actions={headerActions}
         aside={headerAside}
         badge={headerBadge}
         budgetSummary={budgetSummary}
         isBudgetSummaryLoading={isBudgetSummaryLoading}
         notice={headerNotice}
+        ownerLabel={ownerLabel}
         plan={plan}
       />
 

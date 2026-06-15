@@ -3,11 +3,9 @@ import Card from '../../../components/ui/Card'
 import type { TravelPlanDto } from '../types/travelPlan.types'
 
 type TripCardProps = {
-  ownerEmail?: string
-  ownerName?: string
+  ownerLabel?: string
   plan: TravelPlanDto
   readonly?: boolean
-  showOwner?: boolean
   onDelete?: (plan: TravelPlanDto) => void
   onEdit?: (plan: TravelPlanDto) => void
   onView?: (plan: TravelPlanDto) => void
@@ -45,11 +43,9 @@ function getDurationInDays(startDate: string, endDate: string) {
 }
 
 function TripCard({
-  ownerEmail,
-  ownerName,
+  ownerLabel,
   plan,
   readonly = false,
-  showOwner = false,
   onDelete,
   onEdit,
   onView,
@@ -64,14 +60,14 @@ function TripCard({
             <p className="mb-2 inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-extrabold text-blue-700">
               Active plan
             </p>
+            {ownerLabel ? (
+              <p className="mb-2 ml-2 inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-600">
+                {ownerLabel}
+              </p>
+            ) : null}
             <h2 className="m-0 truncate text-xl font-bold text-slate-900">
               {plan.name}
             </h2>
-            {showOwner && (ownerName || ownerEmail) ? (
-              <p className="mt-1 truncate text-sm text-slate-500">
-                {ownerName || ownerEmail}
-              </p>
-            ) : null}
           </div>
         </div>
 

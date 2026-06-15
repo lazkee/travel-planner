@@ -2,12 +2,14 @@ import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import AuthLayout from '../components/layout/AuthLayout'
 import AppLayout from '../components/layout/AppLayout'
 import { useAuth } from '../context/AuthContext'
+import AdminUserPlansPage from '../features/admin/pages/AdminUserPlansPage'
 import LoginPage from '../features/auth/pages/LoginPage'
 import RegisterPage from '../features/auth/pages/RegisterPage'
 import SharedLinksPage from '../features/sharing/pages/SharedLinksPage'
 import SharedTripPage from '../features/sharing/pages/SharedTripPage'
 import MyTripsPage from '../features/trips/pages/MyTripsPage'
 import TripDetailsPage from '../features/trips/pages/TripDetailsPage'
+import AdminRoute from './AdminRoute'
 import ProtectedRoute from './ProtectedRoute'
 
 function DefaultRedirect() {
@@ -64,6 +66,16 @@ function AppRoutes() {
           <Route path="trips/:planId" element={<TripDetailsPage />} />
           <Route path="shared" element={<SharedLinksPage />} />
           <Route path="shared/:token" element={<SharedTripPage />} />
+          <Route element={<AdminRoute />}>
+            <Route
+              path="admin/user-plans"
+              element={<AdminUserPlansPage />}
+            />
+            <Route
+              path="admin/user-plans/:planId"
+              element={<TripDetailsPage />}
+            />
+          </Route>
         </Route>
       </Route>
 

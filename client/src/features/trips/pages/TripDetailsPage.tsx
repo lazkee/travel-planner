@@ -1,22 +1,32 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import Card from '../../../components/ui/Card'
+import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import type { TabItem } from '../../../components/ui/Tabs'
+import { useAuth } from '../../../context/AuthContext'
 import ActivitiesTab from '../../activities/components/ActivitiesTab'
 import ChecklistTab from '../../checklist/components/ChecklistTab'
 import DestinationsTab from '../../destinations/components/DestinationsTab'
 import ExpensesTab from '../../expenses/components/ExpensesTab'
 import ShareTab from '../../sharing/components/ShareTab'
 import { getBudgetSummary } from '../api/budgetSummary.api'
-import { getTravelPlanById } from '../api/travelPlans.api'
+import {
+  deleteTravelPlan,
+  getTravelPlanById,
+  updateTravelPlan,
+} from '../api/travelPlans.api'
 import OverviewTab from '../components/OverviewTab'
 import TripDetailsView from '../components/TripDetailsView'
+import TravelPlanFormModal from '../components/TravelPlanFormModal'
 import type { BudgetSummaryDto } from '../types/budgetSummary.types'
-import type { TravelPlanDto } from '../types/travelPlan.types'
+import type {
+  TravelPlanDto,
+  TravelPlanRequestDto,
+} from '../types/travelPlan.types'
 
 const tabs: TabItem[] = [
   { id: 'overview', label: 'Overview' },
@@ -39,7 +49,9 @@ function parsePlanId(value: string | undefined) {
 
 function TripDetailsPage() {
   const { planId: planIdParam } = useParams()
+  const location = useLocation()
   const navigate = useNavigate()
+  const { isAdmin, user } = useAuth()
   const [activeTab, setActiveTab] = useState('overview')
   const [plan, setPlan] = useState<TravelPlanDto | null>(null)
   const [budgetSummary, setBudgetSummary] = useState<BudgetSummaryDto | null>(
@@ -47,8 +59,19 @@ function TripDetailsPage() {
   )
   const [error, setError] = useState('')
   const [isBudgetSummaryLoading, setIsBudgetSummaryLoading] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const planId = parsePlanId(planIdParam)
+  const isAdminUserPlanRoute = location.pathname.startsWith(
+    '/app/admin/user-plans',
+  )
+  const backPath = isAdminUserPlanRoute ? '/app/admin/user-plans' : '/app/trips'
+  const ownerLabel =
+    plan && isAdmin && user && plan.userId !== user.id
+      ? `Owner: User #${plan.userId}`
+      : undefined
 
   const refreshTripDetails = useCallback(async () => {
     if (!planId) {
@@ -93,7 +116,52 @@ function TripDetailsPage() {
   }, [loadPlan])
 
   function handleBackClick() {
-    navigate('/app/trips')
+    navigate(backPath)
+  }
+
+  function handleEditClick() {
+    setIsFormModalOpen(true)
+  }
+
+  function handleCloseFormModal() {
+    setIsFormModalOpen(false)
+  }
+
+  async function handleSavePlan(request: TravelPlanRequestDto) {
+    if (!plan) {
+      return
+    }
+
+    await updateTravelPlan(plan.id, request)
+    await refreshTripDetails()
+  }
+
+  function handleDeleteClick() {
+    setIsDeleteDialogOpen(true)
+  }
+
+  function handleCancelDelete() {
+    setIsDeleteDialogOpen(false)
+  }
+
+  async function handleConfirmDelete() {
+    if (!plan) {
+      return
+    }
+
+    setIsDeleting(true)
+    setError('')
+
+    try {
+      await deleteTravelPlan(plan.id)
+      setIsDeleteDialogOpen(false)
+      navigate(backPath, { replace: true })
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError))
+      setIsDeleteDialogOpen(false)
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -114,11 +182,24 @@ function TripDetailsPage() {
       {!isLoading && !error && plan ? (
         <TripDetailsView
           activeTab={activeTab}
-          backButtonLabel="Back to trips"
+          backButtonLabel={
+            isAdminUserPlanRoute ? 'Back to user plans' : 'Back to trips'
+          }
           budgetSummary={budgetSummary}
+          headerActions={
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button onClick={handleEditClick} variant="secondary">
+                Edit
+              </Button>
+              <Button onClick={handleDeleteClick} variant="danger">
+                Delete
+              </Button>
+            </div>
+          }
           isBudgetSummaryLoading={isBudgetSummaryLoading}
           onBack={handleBackClick}
           onTabChange={setActiveTab}
+          ownerLabel={ownerLabel}
           plan={plan}
           showBackButton
           tabs={tabs}
@@ -127,6 +208,7 @@ function TripDetailsPage() {
             <OverviewTab
               budgetSummary={budgetSummary}
               isBudgetSummaryLoading={isBudgetSummaryLoading}
+              ownerLabel={ownerLabel}
               plan={plan}
             />
           ) : null}
@@ -150,6 +232,28 @@ function TripDetailsPage() {
           {activeTab === 'share' ? <ShareTab planId={plan.id} /> : null}
         </TripDetailsView>
       ) : null}
+
+      <TravelPlanFormModal
+        initialPlan={plan}
+        isOpen={isFormModalOpen}
+        mode="edit"
+        onClose={handleCloseFormModal}
+        onSubmit={handleSavePlan}
+      />
+
+      <ConfirmDialog
+        confirmLabel="Delete trip"
+        isOpen={isDeleteDialogOpen}
+        isSubmitting={isDeleting}
+        message={
+          plan
+            ? `Delete "${plan.name}"? This cannot be undone.`
+            : 'Delete this trip?'
+        }
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        title="Delete trip"
+      />
     </section>
   )
 }

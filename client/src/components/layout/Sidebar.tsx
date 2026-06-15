@@ -6,7 +6,7 @@ type SidebarProps = {
 }
 
 function Sidebar({ variant = 'authenticated' }: SidebarProps) {
-  const { logout, user } = useAuth()
+  const { isAdmin, logout, user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const linkClassName =
@@ -15,9 +15,18 @@ function Sidebar({ variant = 'authenticated' }: SidebarProps) {
   const displayName = isGuest ? 'Guest' : user?.name || user?.email || 'Traveler'
   const secondaryText = isGuest ? 'Viewing shared trip' : user?.email
   const sharedPath = isGuest ? '/shared' : '/app/shared'
+  const isMyTripsActive =
+    !isGuest &&
+    (location.pathname === '/app/trips' ||
+      location.pathname.startsWith('/app/trips/'))
   const isSharedActive =
+    location.pathname === '/shared' ||
     location.pathname.startsWith('/shared') ||
+    location.pathname === '/app/shared' ||
     location.pathname.startsWith('/app/shared')
+  const isUserPlansActive =
+    location.pathname === '/app/admin/user-plans' ||
+    location.pathname.startsWith('/app/admin/user-plans/')
 
   function handleAuthAction() {
     if (isGuest) {
@@ -36,8 +45,8 @@ function Sidebar({ variant = 'authenticated' }: SidebarProps) {
     >
       <nav className="grid flex-1 gap-2 md:flex-none">
         <NavLink
-          className={({ isActive }) =>
-            isActive ? `${linkClassName} bg-white/[0.12]` : linkClassName
+          className={() =>
+            isMyTripsActive ? `${linkClassName} bg-white/[0.12]` : linkClassName
           }
           to={isGuest ? '/login' : '/app/trips'}
         >
@@ -51,6 +60,18 @@ function Sidebar({ variant = 'authenticated' }: SidebarProps) {
         >
           Shared
         </NavLink>
+        {!isGuest && isAdmin ? (
+          <NavLink
+            className={() =>
+              isUserPlansActive
+                ? `${linkClassName} bg-white/[0.12]`
+                : linkClassName
+            }
+            to="/app/admin/user-plans"
+          >
+            User Plans
+          </NavLink>
+        ) : null}
       </nav>
       <div className="flex items-center gap-3 md:mt-auto md:block md:space-y-3">
         <div className="hidden min-w-0 md:block">

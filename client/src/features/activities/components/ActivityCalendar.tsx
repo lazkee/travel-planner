@@ -1,6 +1,12 @@
 import { format, getDay, parse, startOfWeek } from 'date-fns'
 import { enUS } from 'date-fns/locale/en-US'
-import { Calendar, dateFnsLocalizer, type Event } from 'react-big-calendar'
+import { useState } from 'react'
+import {
+  Calendar,
+  dateFnsLocalizer,
+  type Event,
+  type View,
+} from 'react-big-calendar'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import type { ActivityDto } from '../types/activity.types'
 import ActivityStatusBadge from './ActivityStatusBadge'
@@ -53,26 +59,32 @@ function ActivityCalendar({
   readonly = false,
   onEdit,
 }: ActivityCalendarProps) {
+  const [calendarDate, setCalendarDate] = useState(new Date())
+  const [calendarView, setCalendarView] = useState<View>('month')
   const events = activities.map(mapActivityToEvent)
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-3">
       <div className="min-h-[560px] text-sm text-slate-700">
         <Calendar<ActivityCalendarEvent>
+          date={calendarDate}
           eventPropGetter={() => ({
             className: 'rounded border-0 bg-blue-600 text-white',
           })}
           events={events}
           localizer={localizer}
+          onNavigate={(nextDate) => setCalendarDate(nextDate)}
           onSelectEvent={(event) => {
             if (!readonly) {
               onEdit?.(event.resource)
             }
           }}
+          onView={(nextView) => setCalendarView(nextView)}
           popup
           startAccessor="start"
           endAccessor="end"
           style={{ height: 560 }}
+          view={calendarView}
           views={['month', 'week', 'day', 'agenda']}
           components={{
             event: ({ event }) => (

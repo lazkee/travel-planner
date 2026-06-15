@@ -5,6 +5,7 @@ import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import EmptyState from '../../../components/ui/EmptyState'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
+import { useToast } from '../../../context/ToastContext'
 import {
   createActivity,
   deleteActivity,
@@ -29,6 +30,7 @@ function ActivitiesTab({
   planId,
   readonly = false,
 }: ActivitiesTabProps) {
+  const { showError, showSuccess } = useToast()
   const [activities, setActivities] = useState<ActivityDto[]>([])
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -76,14 +78,20 @@ function ActivitiesTab({
   }
 
   async function handleSaveActivity(request: ActivityRequestDto) {
-    if (editingActivity) {
-      await updateActivity(planId, editingActivity.id, request)
-    } else {
-      await createActivity(planId, request)
-    }
+    try {
+      if (editingActivity) {
+        await updateActivity(planId, editingActivity.id, request)
+      } else {
+        await createActivity(planId, request)
+      }
 
-    await loadActivities()
-    await onActivitiesChanged?.()
+      await loadActivities()
+      await onActivitiesChanged?.()
+      showSuccess(editingActivity ? 'Activity updated.' : 'Activity added.')
+    } catch (requestError) {
+      showError(getApiErrorMessage(requestError))
+      throw requestError
+    }
   }
 
   async function handleConfirmDelete() {
@@ -92,15 +100,15 @@ function ActivitiesTab({
     }
 
     setIsDeleting(true)
-    setError('')
 
     try {
       await deleteActivity(planId, deletingActivity.id)
       setDeletingActivity(null)
       await loadActivities()
       await onActivitiesChanged?.()
+      showSuccess('Activity deleted.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setDeletingActivity(null)
     } finally {
       setIsDeleting(false)

@@ -7,6 +7,7 @@ import EmptyState from '../../../components/ui/EmptyState'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import { useAuth } from '../../../context/AuthContext'
+import { useToast } from '../../../context/ToastContext'
 import {
   deleteAdminUser,
   getAdminUsers,
@@ -29,6 +30,7 @@ function formatDate(value: string) {
 
 function AdminUsersPage() {
   const { user: currentUser } = useAuth()
+  const { showError, showSuccess } = useToast()
   const [users, setUsers] = useState<AdminUserDto[]>([])
   const [error, setError] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
@@ -64,7 +66,6 @@ function AdminUsersPage() {
     }
 
     setUpdatingUserId(user.id)
-    setError('')
 
     try {
       const updatedUser = await updateAdminUserRole(user.id, role)
@@ -73,8 +74,9 @@ function AdminUsersPage() {
           .map((item) => (item.id === updatedUser.id ? updatedUser : item))
           .filter((item) => item.id !== currentUser?.id),
       )
+      showSuccess('User role updated.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
     } finally {
       setUpdatingUserId(null)
     }
@@ -87,7 +89,6 @@ function AdminUsersPage() {
     }
 
     setIsDeleting(true)
-    setError('')
 
     try {
       await deleteAdminUser(deletingUser.id)
@@ -95,8 +96,9 @@ function AdminUsersPage() {
         previousUsers.filter((user) => user.id !== deletingUser.id),
       )
       setDeletingUser(null)
+      showSuccess('User deleted.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setDeletingUser(null)
     } finally {
       setIsDeleting(false)

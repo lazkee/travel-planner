@@ -1,6 +1,5 @@
 import { useEffect, useReducer } from 'react'
 import type * as React from 'react'
-import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import DateInput from '../../../components/ui/DateInput'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
@@ -271,8 +270,8 @@ function ActivityFormModal({
         status: formData.status,
       })
       onClose()
-    } catch (requestError) {
-      dispatch({ type: 'setError', message: getApiErrorMessage(requestError) })
+    } catch {
+      // Operation errors are shown through toast notifications by the parent.
     } finally {
       dispatch({ type: 'submitFinished' })
     }

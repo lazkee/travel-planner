@@ -5,6 +5,7 @@ import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import EmptyState from '../../../components/ui/EmptyState'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
+import { useToast } from '../../../context/ToastContext'
 import {
   createChecklistItem,
   deleteChecklistItem,
@@ -24,6 +25,7 @@ type ChecklistTabProps = {
 }
 
 function ChecklistTab({ planId, readonly = false }: ChecklistTabProps) {
+  const { showError, showSuccess } = useToast()
   const [items, setItems] = useState<ChecklistItemDto[]>([])
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -74,20 +76,25 @@ function ChecklistTab({ planId, readonly = false }: ChecklistTabProps) {
   }
 
   async function handleSaveItem(request: ChecklistItemRequestDto) {
-    if (editingItem) {
-      await updateChecklistItem(planId, editingItem.id, request)
-    } else {
-      await createChecklistItem(planId, request)
-    }
+    try {
+      if (editingItem) {
+        await updateChecklistItem(planId, editingItem.id, request)
+      } else {
+        await createChecklistItem(planId, request)
+      }
 
-    await loadChecklistItems()
+      await loadChecklistItems()
+      showSuccess(editingItem ? 'Checklist item updated.' : 'Checklist item added.')
+    } catch (requestError) {
+      showError(getApiErrorMessage(requestError))
+      throw requestError
+    }
   }
 
   async function handleToggleItem(item: ChecklistItemDto) {
     const nextIsCompleted = !item.isCompleted
 
     setTogglingItemId(item.id)
-    setError('')
     setItems((previousItems) =>
       previousItems.map((currentItem) =>
         currentItem.id === item.id
@@ -110,7 +117,7 @@ function ChecklistTab({ planId, readonly = false }: ChecklistTabProps) {
         ),
       )
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setItems((previousItems) =>
         previousItems.map((currentItem) =>
           currentItem.id === item.id ? item : currentItem,
@@ -127,14 +134,14 @@ function ChecklistTab({ planId, readonly = false }: ChecklistTabProps) {
     }
 
     setIsDeleting(true)
-    setError('')
 
     try {
       await deleteChecklistItem(planId, deletingItem.id)
       setDeletingItem(null)
       await loadChecklistItems()
+      showSuccess('Checklist item deleted.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setDeletingItem(null)
     } finally {
       setIsDeleting(false)

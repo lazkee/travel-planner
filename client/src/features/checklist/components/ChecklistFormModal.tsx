@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import type * as React from 'react'
-import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import Modal from '../../../components/ui/Modal'
@@ -85,8 +84,8 @@ function ChecklistFormModal({
         isCompleted: initialItem?.isCompleted ?? false,
       })
       onClose()
-    } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+    } catch {
+      // Operation errors are shown through toast notifications by the parent.
     } finally {
       setIsSubmitting(false)
     }

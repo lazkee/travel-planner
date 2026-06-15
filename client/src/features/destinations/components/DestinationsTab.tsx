@@ -5,6 +5,7 @@ import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import EmptyState from '../../../components/ui/EmptyState'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
+import { useToast } from '../../../context/ToastContext'
 import {
   createDestination,
   deleteDestination,
@@ -24,6 +25,7 @@ type DestinationsTabProps = {
 }
 
 function DestinationsTab({ planId, readonly = false }: DestinationsTabProps) {
+  const { showError, showSuccess } = useToast()
   const [destinations, setDestinations] = useState<DestinationDto[]>([])
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -68,13 +70,21 @@ function DestinationsTab({ planId, readonly = false }: DestinationsTabProps) {
   }
 
   async function handleSaveDestination(request: DestinationRequestDto) {
-    if (editingDestination) {
-      await updateDestination(planId, editingDestination.id, request)
-    } else {
-      await createDestination(planId, request)
-    }
+    try {
+      if (editingDestination) {
+        await updateDestination(planId, editingDestination.id, request)
+      } else {
+        await createDestination(planId, request)
+      }
 
-    await loadDestinations()
+      await loadDestinations()
+      showSuccess(
+        editingDestination ? 'Destination updated.' : 'Destination added.',
+      )
+    } catch (requestError) {
+      showError(getApiErrorMessage(requestError))
+      throw requestError
+    }
   }
 
   async function handleConfirmDelete() {
@@ -83,14 +93,14 @@ function DestinationsTab({ planId, readonly = false }: DestinationsTabProps) {
     }
 
     setIsDeleting(true)
-    setError('')
 
     try {
       await deleteDestination(planId, deletingDestination.id)
       setDeletingDestination(null)
       await loadDestinations()
+      showSuccess('Destination deleted.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setDeletingDestination(null)
     } finally {
       setIsDeleting(false)

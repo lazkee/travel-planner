@@ -8,6 +8,7 @@ import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import type { TabItem } from '../../../components/ui/Tabs'
 import { useAuth } from '../../../context/AuthContext'
+import { useToast } from '../../../context/ToastContext'
 import ActivitiesTab from '../../activities/components/ActivitiesTab'
 import ChecklistTab from '../../checklist/components/ChecklistTab'
 import DestinationsTab from '../../destinations/components/DestinationsTab'
@@ -53,6 +54,7 @@ function TripDetailsPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const { isAdmin, user } = useAuth()
+  const { showError, showSuccess } = useToast()
   const [activeTab, setActiveTab] = useState('overview')
   const [plan, setPlan] = useState<TravelPlanDto | null>(null)
   const [budgetSummary, setBudgetSummary] = useState<BudgetSummaryDto | null>(
@@ -134,8 +136,14 @@ function TripDetailsPage() {
       return
     }
 
-    await updateTravelPlan(plan.id, request)
-    await refreshTripDetails()
+    try {
+      await updateTravelPlan(plan.id, request)
+      await refreshTripDetails()
+      showSuccess('Trip updated.')
+    } catch (requestError) {
+      showError(getApiErrorMessage(requestError))
+      throw requestError
+    }
   }
 
   function handleDeleteClick() {
@@ -152,12 +160,12 @@ function TripDetailsPage() {
     }
 
     setIsExportingPdf(true)
-    setError('')
 
     try {
       await downloadTravelPlanPdf(plan.id, plan.name)
+      showSuccess('PDF export started.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
     } finally {
       setIsExportingPdf(false)
     }
@@ -169,14 +177,14 @@ function TripDetailsPage() {
     }
 
     setIsDeleting(true)
-    setError('')
 
     try {
       await deleteTravelPlan(plan.id)
       setIsDeleteDialogOpen(false)
+      showSuccess('Trip deleted.')
       navigate(backPath, { replace: true })
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setIsDeleteDialogOpen(false)
     } finally {
       setIsDeleting(false)

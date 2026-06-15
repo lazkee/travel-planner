@@ -6,6 +6,7 @@ import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import EmptyState from '../../../components/ui/EmptyState'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
+import { useToast } from '../../../context/ToastContext'
 import {
   deleteTravelPlan,
   updateTravelPlan,
@@ -20,6 +21,7 @@ import { getAdminUserTrips } from '../api/adminUserTrips.api'
 
 function AdminUserPlansPage() {
   const navigate = useNavigate()
+  const { showError, showSuccess } = useToast()
   const [plans, setPlans] = useState<TravelPlanDto[]>([])
   const [error, setError] = useState('')
   const [editingPlan, setEditingPlan] = useState<TravelPlanDto | null>(null)
@@ -65,8 +67,14 @@ function AdminUserPlansPage() {
       return
     }
 
-    await updateTravelPlan(editingPlan.id, request)
-    await loadPlans()
+    try {
+      await updateTravelPlan(editingPlan.id, request)
+      await loadPlans()
+      showSuccess('User plan updated.')
+    } catch (requestError) {
+      showError(getApiErrorMessage(requestError))
+      throw requestError
+    }
   }
 
   async function handleConfirmDelete() {
@@ -75,14 +83,14 @@ function AdminUserPlansPage() {
     }
 
     setIsDeleting(true)
-    setError('')
 
     try {
       await deleteTravelPlan(deletingPlan.id)
       setDeletingPlan(null)
       await loadPlans()
+      showSuccess('User plan deleted.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setDeletingPlan(null)
     } finally {
       setIsDeleting(false)

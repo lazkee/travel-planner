@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useReducer } from 'react'
 import type * as React from 'react'
 import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
@@ -32,6 +32,32 @@ type ActivityFormData = {
   status: ActivityStatus
 }
 
+const textActivityFormFields = [
+  'name',
+  'date',
+  'time',
+  'location',
+  'description',
+  'estimatedCost',
+] as const
+
+type TextActivityFormField = (typeof textActivityFormFields)[number]
+
+type ActivityFormState = {
+  formData: ActivityFormData
+  error: string
+  isSubmitting: boolean
+}
+
+type ActivityFormAction =
+  | { type: 'resetForCreate' }
+  | { type: 'resetForEdit'; payload: ActivityDto }
+  | { type: 'fieldChanged'; field: TextActivityFormField; value: string }
+  | { type: 'statusChanged'; value: ActivityStatus }
+  | { type: 'setError'; message: string }
+  | { type: 'submitStarted' }
+  | { type: 'submitFinished' }
+
 const emptyFormData: ActivityFormData = {
   name: '',
   date: '',
@@ -40,6 +66,12 @@ const emptyFormData: ActivityFormData = {
   description: '',
   estimatedCost: '0',
   status: 'Planned',
+}
+
+const initialFormState: ActivityFormState = {
+  formData: emptyFormData,
+  error: '',
+  isSubmitting: false,
 }
 
 const selectClassName =
@@ -59,6 +91,87 @@ function toRequestTime(value: string) {
   return value ? `${value}:00` : undefined
 }
 
+function isTextActivityFormField(value: string): value is TextActivityFormField {
+  return (textActivityFormFields as readonly string[]).includes(value)
+}
+
+function isActivityStatus(value: string): value is ActivityStatus {
+  return (activityStatuses as readonly string[]).includes(value)
+}
+
+function toEditFormData(activity: ActivityDto): ActivityFormData {
+  return {
+    name: activity.name,
+    date: toDateInputValue(activity.date),
+    time: activity.time ?? '',
+    location: activity.location ?? '',
+    description: activity.description ?? '',
+    estimatedCost: String(activity.estimatedCost),
+    status: activity.status,
+  }
+}
+
+function activityFormReducer(
+  state: ActivityFormState,
+  action: ActivityFormAction,
+): ActivityFormState {
+  switch (action.type) {
+    case 'resetForCreate':
+      return {
+        formData: emptyFormData,
+        error: '',
+        isSubmitting: false,
+      }
+
+    case 'resetForEdit':
+      return {
+        formData: toEditFormData(action.payload),
+        error: '',
+        isSubmitting: false,
+      }
+
+    case 'fieldChanged':
+      return {
+        ...state,
+        formData: {
+          ...state.formData,
+          [action.field]: action.value,
+        },
+      }
+
+    case 'statusChanged':
+      return {
+        ...state,
+        formData: {
+          ...state.formData,
+          status: action.value,
+        },
+      }
+
+    case 'setError':
+      return {
+        ...state,
+        error: action.message,
+      }
+
+    case 'submitStarted':
+      return {
+        ...state,
+        error: '',
+        isSubmitting: true,
+      }
+
+    case 'submitFinished':
+      return {
+        ...state,
+        isSubmitting: false,
+      }
+
+    default:
+      return state
+  }
+}
+
 function ActivityFormModal({
   initialActivity,
   isOpen,
@@ -66,32 +179,20 @@ function ActivityFormModal({
   onClose,
   onSubmit,
 }: ActivityFormModalProps) {
-  const [formData, setFormData] = useState<ActivityFormData>(emptyFormData)
-  const [error, setError] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [state, dispatch] = useReducer(activityFormReducer, initialFormState)
+  const { error, formData, isSubmitting } = state
 
   useEffect(() => {
     if (!isOpen) {
       return
     }
 
-    if (initialActivity) {
-      setFormData({
-        name: initialActivity.name,
-        date: toDateInputValue(initialActivity.date),
-        time: initialActivity.time ?? '',
-        location: initialActivity.location ?? '',
-        description: initialActivity.description ?? '',
-        estimatedCost: String(initialActivity.estimatedCost),
-        status: initialActivity.status,
-      })
+    if (mode === 'edit' && initialActivity) {
+      dispatch({ type: 'resetForEdit', payload: initialActivity })
     } else {
-      setFormData(emptyFormData)
+      dispatch({ type: 'resetForCreate' })
     }
-
-    setError('')
-    setIsSubmitting(false)
-  }, [initialActivity, isOpen])
+  }, [initialActivity, isOpen, mode])
 
   const handleChange = (
     event: React.ChangeEvent<
@@ -100,10 +201,21 @@ function ActivityFormModal({
   ) => {
     const { name, value } = event.target
 
-    setFormData((previous) => ({
-      ...previous,
-      [name]: value,
-    }))
+    if (name === 'status') {
+      if (isActivityStatus(value)) {
+        dispatch({ type: 'statusChanged', value })
+      }
+
+      return
+    }
+
+    if (isTextActivityFormField(name)) {
+      dispatch({
+        type: 'fieldChanged',
+        field: name,
+        value,
+      })
+    }
   }
 
   function validateForm() {
@@ -139,12 +251,11 @@ function ActivityFormModal({
     const validationError = validateForm()
 
     if (validationError) {
-      setError(validationError)
+      dispatch({ type: 'setError', message: validationError })
       return
     }
 
-    setError('')
-    setIsSubmitting(true)
+    dispatch({ type: 'submitStarted' })
 
     const estimatedCost =
       formData.estimatedCost === '' ? 0 : Number(formData.estimatedCost)
@@ -161,9 +272,9 @@ function ActivityFormModal({
       })
       onClose()
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      dispatch({ type: 'setError', message: getApiErrorMessage(requestError) })
     } finally {
-      setIsSubmitting(false)
+      dispatch({ type: 'submitFinished' })
     }
   }
 
@@ -260,7 +371,12 @@ function ActivityFormModal({
         />
 
         <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-          <Button disabled={isSubmitting} onClick={onClose} variant="secondary">
+          <Button
+            disabled={isSubmitting}
+            onClick={onClose}
+            type="button"
+            variant="secondary"
+          >
             Cancel
           </Button>
           <Button isLoading={isSubmitting} type="submit">

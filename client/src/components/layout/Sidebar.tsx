@@ -27,6 +27,7 @@ function Sidebar({ variant = 'authenticated' }: SidebarProps) {
   const isUserPlansActive =
     location.pathname === '/app/admin/user-plans' ||
     location.pathname.startsWith('/app/admin/user-plans/')
+  const isUsersActive = location.pathname === '/app/admin/users'
 
   function handleAuthAction() {
     if (isGuest) {
@@ -61,16 +62,28 @@ function Sidebar({ variant = 'authenticated' }: SidebarProps) {
           Shared
         </NavLink>
         {!isGuest && isAdmin ? (
-          <NavLink
-            className={() =>
-              isUserPlansActive
-                ? `${linkClassName} bg-white/[0.12]`
-                : linkClassName
-            }
-            to="/app/admin/user-plans"
-          >
-            User Plans
-          </NavLink>
+          <>
+            <NavLink
+              className={() =>
+                isUserPlansActive
+                  ? `${linkClassName} bg-white/[0.12]`
+                  : linkClassName
+              }
+              to="/app/admin/user-plans"
+            >
+              User Plans
+            </NavLink>
+            <NavLink
+              className={() =>
+                isUsersActive
+                  ? `${linkClassName} bg-white/[0.12]`
+                  : linkClassName
+              }
+              to="/app/admin/users"
+            >
+              Users
+            </NavLink>
+          </>
         ) : null}
       </nav>
       <div className="flex items-center gap-3 md:mt-auto md:block md:space-y-3">

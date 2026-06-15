@@ -2,6 +2,7 @@ import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import AuthLayout from '../components/layout/AuthLayout'
 import AppLayout from '../components/layout/AppLayout'
 import { useAuth } from '../context/AuthContext'
+import AdminUsersPage from '../features/admin/pages/AdminUsersPage'
 import AdminUserPlansPage from '../features/admin/pages/AdminUserPlansPage'
 import LoginPage from '../features/auth/pages/LoginPage'
 import RegisterPage from '../features/auth/pages/RegisterPage'
@@ -67,6 +68,7 @@ function AppRoutes() {
           <Route path="shared" element={<SharedLinksPage />} />
           <Route path="shared/:token" element={<SharedTripPage />} />
           <Route element={<AdminRoute />}>
+            <Route path="admin/users" element={<AdminUsersPage />} />
             <Route
               path="admin/user-plans"
               element={<AdminUserPlansPage />}

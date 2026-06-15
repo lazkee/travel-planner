@@ -8,6 +8,7 @@ import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import Tabs, { type TabItem } from '../../../components/ui/Tabs'
 import ActivitiesTab from '../../activities/components/ActivitiesTab'
+import ChecklistTab from '../../checklist/components/ChecklistTab'
 import DestinationsTab from '../../destinations/components/DestinationsTab'
 import ExpensesTab from '../../expenses/components/ExpensesTab'
 import { getBudgetSummary } from '../api/budgetSummary.api'
@@ -152,10 +153,14 @@ function TripDetailsPage() {
                   planId={plan.id}
                 />
               ) : null}
+              {activeTab === 'checklist' ? (
+                <ChecklistTab planId={plan.id} />
+              ) : null}
               {activeTab !== 'overview' &&
               activeTab !== 'destinations' &&
               activeTab !== 'activities' &&
               activeTab !== 'expenses' &&
+              activeTab !== 'checklist' &&
               selectedTab ? (
                 <EmptyState
                   description={`${selectedTab.label} will be added in a future feature step.`}

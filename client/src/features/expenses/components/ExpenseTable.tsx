@@ -15,7 +15,9 @@ type ExpenseTableProps = {
   readonly?: boolean
   selectedFilter: ExpenseFilter
   onDelete?: (expense: ExpenseDto) => void
+  onDeleteActivity?: (activity: ActivityDto) => void
   onEdit?: (expense: ExpenseDto) => void
+  onEditActivity?: (activity: ActivityDto) => void
 }
 
 type ExpenseDisplayRow =
@@ -109,7 +111,9 @@ function ExpenseTable({
   activities,
   expenses,
   onDelete,
+  onDeleteActivity,
   onEdit,
+  onEditActivity,
   readonly = false,
   selectedFilter,
 }: ExpenseTableProps) {
@@ -190,9 +194,20 @@ function ExpenseTable({
                         </Button>
                       </div>
                     ) : (
-                      <p className="m-0 text-right text-sm text-slate-500">
-                        Read-only
-                      </p>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          onClick={() => onEditActivity?.(row.activity)}
+                          variant="secondary"
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          onClick={() => onDeleteActivity?.(row.activity)}
+                          variant="ghost"
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     )}
                   </td>
                 ) : null}

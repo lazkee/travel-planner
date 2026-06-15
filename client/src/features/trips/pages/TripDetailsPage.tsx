@@ -148,9 +148,7 @@ function TripDetailsPage() {
               {activeTab === 'expenses' ? (
                 <ExpensesTab
                   budgetSummary={budgetSummary}
-                  isBudgetSummaryLoading={isBudgetSummaryLoading}
                   onExpensesChanged={refreshTripDetails}
-                  planBudget={plan.budget}
                   planId={plan.id}
                 />
               ) : null}

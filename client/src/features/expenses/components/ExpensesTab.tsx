@@ -6,9 +6,15 @@ import EmptyState from '../../../components/ui/EmptyState'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import {
+  deleteActivity,
   getActivities,
+  updateActivity,
 } from '../../activities/api/activities.api'
-import type { ActivityDto } from '../../activities/types/activity.types'
+import ActivityFormModal from '../../activities/components/ActivityFormModal'
+import type {
+  ActivityDto,
+  ActivityRequestDto,
+} from '../../activities/types/activity.types'
 import type { BudgetSummaryDto } from '../../trips/types/budgetSummary.types'
 import {
   createExpense,
@@ -29,8 +35,6 @@ import ExpenseTable from './ExpenseTable'
 
 type ExpensesTabProps = {
   budgetSummary: BudgetSummaryDto | null
-  isBudgetSummaryLoading?: boolean
-  planBudget?: number
   planId: number
   readonly?: boolean
   onExpensesChanged?: () => void | Promise<void>
@@ -93,9 +97,7 @@ function getUsedBudget(
 
 function ExpensesTab({
   budgetSummary,
-  isBudgetSummaryLoading: _isBudgetSummaryLoading = false,
   onExpensesChanged,
-  planBudget = 0,
   planId,
   readonly = false,
 }: ExpensesTabProps) {
@@ -110,6 +112,14 @@ function ExpensesTab({
     null,
   )
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isActivityFormModalOpen, setIsActivityFormModalOpen] = useState(false)
+  const [editingActivity, setEditingActivity] = useState<ActivityDto | null>(
+    null,
+  )
+  const [deletingActivity, setDeletingActivity] = useState<ActivityDto | null>(
+    null,
+  )
+  const [isDeletingActivity, setIsDeletingActivity] = useState(false)
 
   const loadBudgetItems = useCallback(async () => {
     setIsLoading(true)
@@ -142,8 +152,6 @@ function ExpensesTab({
     [activities, expenses],
   )
   const usedBudget = budgetSummary?.totalExpenses ?? localUsedBudget
-  void planBudget
-  void _isBudgetSummaryLoading
 
   function handleAddClick() {
     setEditingExpense(null)
@@ -160,6 +168,16 @@ function ExpensesTab({
     setEditingExpense(null)
   }
 
+  function handleEditActivityClick(activity: ActivityDto) {
+    setEditingActivity(activity)
+    setIsActivityFormModalOpen(true)
+  }
+
+  function handleCloseActivityFormModal() {
+    setIsActivityFormModalOpen(false)
+    setEditingActivity(null)
+  }
+
   async function handleSaveExpense(request: ExpenseRequestDto) {
     if (editingExpense) {
       await updateExpense(planId, editingExpense.id, request)
@@ -167,6 +185,16 @@ function ExpensesTab({
       await createExpense(planId, request)
     }
 
+    await loadBudgetItems()
+    await onExpensesChanged?.()
+  }
+
+  async function handleSaveActivity(request: ActivityRequestDto) {
+    if (!editingActivity) {
+      return
+    }
+
+    await updateActivity(planId, editingActivity.id, request)
     await loadBudgetItems()
     await onExpensesChanged?.()
   }
@@ -189,6 +217,27 @@ function ExpensesTab({
       setDeletingExpense(null)
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  async function handleConfirmDeleteActivity() {
+    if (!deletingActivity) {
+      return
+    }
+
+    setIsDeletingActivity(true)
+    setError('')
+
+    try {
+      await deleteActivity(planId, deletingActivity.id)
+      setDeletingActivity(null)
+      await loadBudgetItems()
+      await onExpensesChanged?.()
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError))
+      setDeletingActivity(null)
+    } finally {
+      setIsDeletingActivity(false)
     }
   }
 
@@ -234,7 +283,9 @@ function ExpensesTab({
             activities={activities}
             expenses={expenses}
             onDelete={setDeletingExpense}
+            onDeleteActivity={setDeletingActivity}
             onEdit={handleEditClick}
+            onEditActivity={handleEditActivityClick}
             readonly={readonly}
             selectedFilter={selectedFilter}
           />
@@ -257,6 +308,14 @@ function ExpensesTab({
         onSubmit={handleSaveExpense}
       />
 
+      <ActivityFormModal
+        initialActivity={editingActivity}
+        isOpen={isActivityFormModalOpen}
+        mode="edit"
+        onClose={handleCloseActivityFormModal}
+        onSubmit={handleSaveActivity}
+      />
+
       <ConfirmDialog
         confirmLabel="Delete expense"
         isOpen={Boolean(deletingExpense)}
@@ -269,6 +328,20 @@ function ExpensesTab({
         onCancel={() => setDeletingExpense(null)}
         onConfirm={handleConfirmDelete}
         title="Delete expense"
+      />
+
+      <ConfirmDialog
+        confirmLabel="Delete activity"
+        isOpen={Boolean(deletingActivity)}
+        isSubmitting={isDeletingActivity}
+        message={
+          deletingActivity
+            ? `Delete "${deletingActivity.name}"? This removes the activity and its planned cost.`
+            : 'Delete this activity?'
+        }
+        onCancel={() => setDeletingActivity(null)}
+        onConfirm={handleConfirmDeleteActivity}
+        title="Delete activity"
       />
     </section>
   )

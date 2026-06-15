@@ -4,9 +4,9 @@ import Topbar from './Topbar'
 
 function AppLayout() {
   return (
-    <div className="min-h-screen bg-[#f3f6fb] md:grid md:grid-cols-[248px_minmax(0,1fr)]">
+    <div className="min-h-screen overflow-x-hidden bg-[#f3f6fb]">
       <Sidebar />
-      <div className="flex min-w-0 flex-col">
+      <div className="flex min-w-0 flex-col md:ml-[280px] md:min-h-screen">
         <Topbar />
         <main className="flex-1 px-5 py-6 md:p-8">
           <Outlet />

@@ -15,7 +15,7 @@ function Sidebar() {
 
   return (
     <aside
-      className="flex gap-3 bg-[#101828] p-3 text-white md:min-h-screen md:flex-col md:justify-between md:px-[18px] md:py-6"
+      className="box-border flex gap-3 bg-[#101828] p-3 text-white md:fixed md:left-0 md:top-0 md:h-screen md:h-dvh md:w-[280px] md:flex-col md:overflow-hidden md:px-[18px] md:py-6"
       aria-label="Application navigation"
     >
       <nav className="grid flex-1 gap-2 md:flex-none">
@@ -28,7 +28,7 @@ function Sidebar() {
           My Trips
         </NavLink>
       </nav>
-      <div className="flex items-center gap-3 md:block md:space-y-3">
+      <div className="flex items-center gap-3 md:mt-auto md:block md:space-y-3">
         <div className="hidden min-w-0 md:block">
           <p className="m-0 truncate text-sm font-bold text-white">
             {displayName}

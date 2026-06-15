@@ -13,10 +13,14 @@ namespace TravelService.Controllers;
 public class TravelPlansController : ControllerBase
 {
     private readonly ITravelPlanService _travelPlanService;
+    private readonly ITravelPlanPdfExportService _pdfExportService;
 
-    public TravelPlansController(ITravelPlanService travelPlanService)
+    public TravelPlansController(
+        ITravelPlanService travelPlanService,
+        ITravelPlanPdfExportService pdfExportService)
     {
         _travelPlanService = travelPlanService;
+        _pdfExportService = pdfExportService;
     }
 
     [HttpGet]
@@ -48,6 +52,19 @@ public class TravelPlansController : ControllerBase
 
         var result = await _travelPlanService.GetByIdAsync(userId.Value, id);
         return result.IsSuccess ? Ok(result.Value) : MapError(result.Error!);
+    }
+
+    [HttpGet("{id}/pdf")]
+    public async Task<IActionResult> ExportPdf(int id)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
+
+        var result = await _pdfExportService.ExportAsync(userId.Value, id);
+        if (result.IsFailure) return MapError(result.Error!);
+
+        var export = result.Value!;
+        return File(export.Content, "application/pdf");
     }
 
     [HttpPost]

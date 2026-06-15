@@ -16,6 +16,7 @@ import ShareTab from '../../sharing/components/ShareTab'
 import { getBudgetSummary } from '../api/budgetSummary.api'
 import {
   deleteTravelPlan,
+  downloadTravelPlanPdf,
   getTravelPlanById,
   updateTravelPlan,
 } from '../api/travelPlans.api'
@@ -61,6 +62,7 @@ function TripDetailsPage() {
   const [isBudgetSummaryLoading, setIsBudgetSummaryLoading] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const planId = parsePlanId(planIdParam)
@@ -144,6 +146,23 @@ function TripDetailsPage() {
     setIsDeleteDialogOpen(false)
   }
 
+  async function handleExportPdfClick() {
+    if (!plan) {
+      return
+    }
+
+    setIsExportingPdf(true)
+    setError('')
+
+    try {
+      await downloadTravelPlanPdf(plan.id, plan.name)
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError))
+    } finally {
+      setIsExportingPdf(false)
+    }
+  }
+
   async function handleConfirmDelete() {
     if (!plan) {
       return
@@ -188,6 +207,13 @@ function TripDetailsPage() {
           budgetSummary={budgetSummary}
           headerActions={
             <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                disabled={isExportingPdf}
+                onClick={handleExportPdfClick}
+                variant="secondary"
+              >
+                {isExportingPdf ? 'Exporting...' : 'Export PDF'}
+              </Button>
               <Button onClick={handleEditClick} variant="secondary">
                 Edit
               </Button>

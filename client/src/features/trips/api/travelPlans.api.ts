@@ -58,6 +58,16 @@ function normalizeTravelPlan(data: unknown): TravelPlanDto {
   }
 }
 
+function getSafePdfFileName(planName: string) {
+  const safePlanName = planName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  return `${safePlanName || 'travel-plan'}-travel-plan.pdf`
+}
+
 export async function getTravelPlans(): Promise<TravelPlanDto[]> {
   const response = await travelServiceClient.get('/api/travel-plans')
   const plans = Array.isArray(response.data) ? response.data : []
@@ -93,4 +103,24 @@ export async function updateTravelPlan(
 
 export async function deleteTravelPlan(id: number): Promise<void> {
   await travelServiceClient.delete(`/api/travel-plans/${id}`)
+}
+
+export async function downloadTravelPlanPdf(
+  id: number,
+  planName: string,
+): Promise<void> {
+  const response = await travelServiceClient.get(`/api/travel-plans/${id}/pdf`, {
+    responseType: 'blob',
+  })
+  const pdfBlob = new Blob([response.data], { type: 'application/pdf' })
+  const objectUrl = window.URL.createObjectURL(pdfBlob)
+  const link = document.createElement('a')
+
+  link.href = objectUrl
+  link.download = getSafePdfFileName(planName)
+  link.style.display = 'none'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(objectUrl)
 }

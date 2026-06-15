@@ -151,6 +151,7 @@ internal sealed class TravelService : StatelessService, ITravelDataCleanupServic
         services.AddHttpContextAccessor();
         services.AddScoped<ITravelPlanOwnershipValidator, TravelPlanOwnershipValidator>();
         services.AddScoped<ITravelPlanService, TravelPlanService>();
+        services.AddScoped<ITravelPlanPdfExportService, TravelPlanPdfExportService>();
         services.AddScoped<IDestinationService, DestinationService>();
         services.AddScoped<IActivityService, ActivityService>();
         services.AddScoped<IExpenseService, ExpenseService>();

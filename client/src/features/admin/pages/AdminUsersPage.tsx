@@ -199,7 +199,7 @@ function AdminUsersPage() {
                         <Button
                           disabled={isDeleting}
                           onClick={() => setDeletingUser(user)}
-                          variant="ghost"
+                          variant="danger"
                         >
                           Delete
                         </Button>

@@ -378,7 +378,7 @@ function ActivityFormModal({
           >
             Cancel
           </Button>
-          <Button isLoading={isSubmitting} type="submit">
+          <Button isLoading={isSubmitting} type="submit" variant="primary">
             {mode === 'create' ? 'Add activity' : 'Save changes'}
           </Button>
         </div>

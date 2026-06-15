@@ -147,7 +147,11 @@ function SharedExpensesTab({
           </p>
         </div>
         {!readonly ? (
-          <Button className="w-full sm:w-auto" onClick={handleAddClick}>
+          <Button
+            className="w-full sm:w-auto"
+            onClick={handleAddClick}
+            variant="primary"
+          >
             Add expense
           </Button>
         ) : null}
@@ -157,7 +161,13 @@ function SharedExpensesTab({
 
       {expenses.length === 0 && activities.length === 0 ? (
         <EmptyState
-          action={!readonly ? <Button onClick={handleAddClick}>Add expense</Button> : null}
+          action={
+            !readonly ? (
+              <Button onClick={handleAddClick} variant="primary">
+                Add expense
+              </Button>
+            ) : null
+          }
           description="Add recorded expenses or activity estimates to see budget usage here."
           title="No budget items yet"
         />

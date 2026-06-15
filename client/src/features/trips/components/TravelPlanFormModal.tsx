@@ -224,7 +224,7 @@ function TravelPlanFormModal({
           <Button disabled={isSubmitting} onClick={onClose} variant="secondary">
             Cancel
           </Button>
-          <Button isLoading={isSubmitting} type="submit">
+          <Button isLoading={isSubmitting} type="submit" variant="primary">
             {mode === 'create' ? 'Create trip' : 'Save changes'}
           </Button>
         </div>

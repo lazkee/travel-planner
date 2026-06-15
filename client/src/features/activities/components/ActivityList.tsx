@@ -122,13 +122,13 @@ function ActivityList({
                     <div className="flex flex-wrap gap-2 lg:justify-end">
                       <Button
                         onClick={() => onEdit?.(activity)}
-                        variant="secondary"
+                        variant="primary"
                       >
                         Edit
                       </Button>
                       <Button
                         onClick={() => onDelete?.(activity)}
-                        variant="ghost"
+                        variant="danger"
                       >
                         Delete
                       </Button>

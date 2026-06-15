@@ -139,7 +139,7 @@ function SharedTripDetailsView({
         <Button
           className="w-full sm:w-auto"
           onClick={() => setIsPlanModalOpen(true)}
-          variant="secondary"
+          variant="primary"
         >
           Edit trip
         </Button>

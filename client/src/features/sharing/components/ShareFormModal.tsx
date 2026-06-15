@@ -162,7 +162,7 @@ function ShareFormModal({
           <Button disabled={isSubmitting} onClick={onClose} variant="secondary">
             Cancel
           </Button>
-          <Button isLoading={isSubmitting} type="submit">
+          <Button isLoading={isSubmitting} type="submit" variant="primary">
             Create share link
           </Button>
         </div>

@@ -94,7 +94,11 @@ function SharedActivitiesTab({
           </p>
         </div>
         {!readonly ? (
-          <Button className="w-full sm:w-auto" onClick={handleAddClick}>
+          <Button
+            className="w-full sm:w-auto"
+            onClick={handleAddClick}
+            variant="primary"
+          >
             Add activity
           </Button>
         ) : null}
@@ -104,7 +108,13 @@ function SharedActivitiesTab({
 
       {activities.length === 0 ? (
         <EmptyState
-          action={!readonly ? <Button onClick={handleAddClick}>Add activity</Button> : null}
+          action={
+            !readonly ? (
+              <Button onClick={handleAddClick} variant="primary">
+                Add activity
+              </Button>
+            ) : null
+          }
           description="Add planned tours, meals, reservations, or events."
           title="No activities yet"
         />

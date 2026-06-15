@@ -111,15 +111,15 @@ function TripCard({
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-        <Button onClick={() => onView?.(plan)} variant="secondary">
+        <Button onClick={() => onView?.(plan)} variant="primary">
           View
         </Button>
         {!readonly ? (
           <>
-            <Button onClick={() => onEdit?.(plan)} variant="secondary">
+            <Button onClick={() => onEdit?.(plan)} variant="primary">
               Edit
             </Button>
-            <Button onClick={() => onDelete?.(plan)} variant="ghost">
+            <Button onClick={() => onDelete?.(plan)} variant="danger">
               Delete
             </Button>
           </>

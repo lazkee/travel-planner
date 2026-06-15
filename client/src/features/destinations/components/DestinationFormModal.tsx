@@ -203,7 +203,7 @@ function DestinationFormModal({
           <Button disabled={isSubmitting} onClick={onClose} variant="secondary">
             Cancel
           </Button>
-          <Button isLoading={isSubmitting} type="submit">
+          <Button isLoading={isSubmitting} type="submit" variant="primary">
             {mode === 'create' ? 'Add destination' : 'Save changes'}
           </Button>
         </div>

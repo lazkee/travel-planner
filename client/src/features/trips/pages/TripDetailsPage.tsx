@@ -218,11 +218,11 @@ function TripDetailsPage() {
               <Button
                 disabled={isExportingPdf}
                 onClick={handleExportPdfClick}
-                variant="secondary"
+                variant="primary"
               >
                 {isExportingPdf ? 'Exporting...' : 'Export PDF'}
               </Button>
-              <Button onClick={handleEditClick} variant="secondary">
+              <Button onClick={handleEditClick} variant="primary">
                 Edit
               </Button>
               <Button onClick={handleDeleteClick} variant="danger">

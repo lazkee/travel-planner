@@ -27,6 +27,11 @@ function BudgetProgress({
   const rawPercentage = budget > 0 ? (spent / budget) * 100 : 0
   const percentage = clampPercentage(rawPercentage)
   const percentageLabel = `${Math.round(percentage)}% of budget used`
+  const isOverBudget = remaining <= 0
+  const progressColorClassName = isOverBudget ? 'bg-red-500' : 'bg-emerald-500'
+  const remainingTextClassName = isOverBudget
+    ? 'font-bold text-red-700'
+    : 'font-bold text-slate-900'
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-4">
@@ -50,7 +55,10 @@ function BudgetProgress({
 
       <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-100">
         <div
-          className="h-full rounded-full bg-emerald-500 transition-[width]"
+          className={[
+            'h-full rounded-full transition-[width]',
+            progressColorClassName,
+          ].join(' ')}
           style={{ width: `${isLoading ? 0 : percentage}%` }}
         />
       </div>
@@ -61,7 +69,7 @@ function BudgetProgress({
         ) : (
           <span className="font-medium text-slate-600">{percentageLabel}</span>
         )}
-        <span className="font-bold text-slate-900">
+        <span className={remainingTextClassName}>
           Remaining {currencyFormatter.format(remaining)}
         </span>
       </div>

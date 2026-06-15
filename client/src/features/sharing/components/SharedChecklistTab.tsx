@@ -110,7 +110,11 @@ function SharedChecklistTab({
           </p>
         </div>
         {!readonly ? (
-          <Button className="w-full sm:w-auto" onClick={handleAddClick}>
+          <Button
+            className="w-full sm:w-auto"
+            onClick={handleAddClick}
+            variant="primary"
+          >
             Add item
           </Button>
         ) : null}
@@ -120,7 +124,13 @@ function SharedChecklistTab({
 
       {items.length === 0 ? (
         <EmptyState
-          action={!readonly ? <Button onClick={handleAddClick}>Add item</Button> : null}
+          action={
+            !readonly ? (
+              <Button onClick={handleAddClick} variant="primary">
+                Add item
+              </Button>
+            ) : null
+          }
           description="Add packing tasks, reminders, or other simple trip to-dos."
           title="No checklist items yet"
         />

@@ -154,7 +154,11 @@ function ActivitiesTab({
           </div>
 
           {!readonly ? (
-            <Button className="w-full sm:w-auto" onClick={handleAddClick}>
+            <Button
+              className="w-full sm:w-auto"
+              onClick={handleAddClick}
+              variant="primary"
+            >
               Add activity
             </Button>
           ) : null}
@@ -168,7 +172,11 @@ function ActivitiesTab({
       {!isLoading && !error && activities.length === 0 ? (
         <EmptyState
           action={
-            !readonly ? <Button onClick={handleAddClick}>Add activity</Button> : null
+            !readonly ? (
+              <Button onClick={handleAddClick} variant="primary">
+                Add activity
+              </Button>
+            ) : null
           }
           description="Add reservations, tours, meals, and other planned items for this trip."
           title="No activities yet"

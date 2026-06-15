@@ -119,7 +119,11 @@ function DestinationsTab({ planId, readonly = false }: DestinationsTabProps) {
           </p>
         </div>
         {!readonly ? (
-          <Button className="w-full sm:w-auto" onClick={handleAddClick}>
+          <Button
+            className="w-full sm:w-auto"
+            onClick={handleAddClick}
+            variant="primary"
+          >
             Add destination
           </Button>
         ) : null}
@@ -133,7 +137,9 @@ function DestinationsTab({ planId, readonly = false }: DestinationsTabProps) {
         <EmptyState
           action={
             !readonly ? (
-              <Button onClick={handleAddClick}>Add destination</Button>
+              <Button onClick={handleAddClick} variant="primary">
+                Add destination
+              </Button>
             ) : null
           }
           description="Add the cities, stops, or places that belong to this trip."

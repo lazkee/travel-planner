@@ -66,10 +66,10 @@ function DestinationCard({
 
       {!readonly ? (
         <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-          <Button onClick={() => onEdit?.(destination)} variant="secondary">
+          <Button onClick={() => onEdit?.(destination)} variant="primary">
             Edit
           </Button>
-          <Button onClick={() => onDelete?.(destination)} variant="ghost">
+          <Button onClick={() => onDelete?.(destination)} variant="danger">
             Delete
           </Button>
         </div>

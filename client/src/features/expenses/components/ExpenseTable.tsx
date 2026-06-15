@@ -182,13 +182,13 @@ function ExpenseTable({
                       <div className="flex justify-end gap-2">
                         <Button
                           onClick={() => onEdit?.(row.expense)}
-                          variant="secondary"
+                          variant="primary"
                         >
                           Edit
                         </Button>
                         <Button
                           onClick={() => onDelete?.(row.expense)}
-                          variant="ghost"
+                          variant="danger"
                         >
                           Delete
                         </Button>
@@ -197,13 +197,13 @@ function ExpenseTable({
                       <div className="flex justify-end gap-2">
                         <Button
                           onClick={() => onEditActivity?.(row.activity)}
-                          variant="secondary"
+                          variant="primary"
                         >
                           Edit
                         </Button>
                         <Button
                           onClick={() => onDeleteActivity?.(row.activity)}
-                          variant="ghost"
+                          variant="danger"
                         >
                           Delete
                         </Button>

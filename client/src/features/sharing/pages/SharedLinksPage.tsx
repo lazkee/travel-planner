@@ -147,7 +147,7 @@ function SharedLinksPage({
           </div>
 
           <div>
-            <Button isLoading={isSubmitting} type="submit">
+            <Button isLoading={isSubmitting} type="submit" variant="primary">
               Open shared trip
             </Button>
           </div>

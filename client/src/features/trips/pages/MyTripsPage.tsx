@@ -127,7 +127,11 @@ function MyTripsPage() {
             activities, expenses, and checklists in later steps.
           </p>
         </div>
-        <Button className="w-full md:w-auto" onClick={handleCreateClick}>
+        <Button
+          className="w-full md:w-auto"
+          onClick={handleCreateClick}
+          variant="primary"
+        >
           New Trip
         </Button>
       </header>
@@ -138,7 +142,11 @@ function MyTripsPage() {
 
       {!isLoading && !error && plans.length === 0 ? (
         <EmptyState
-          action={<Button onClick={handleCreateClick}>New Trip</Button>}
+          action={
+            <Button onClick={handleCreateClick} variant="primary">
+              New Trip
+            </Button>
+          }
           description="Start by creating your first travel plan. Destinations and activities will be added in future steps."
           title="No trips yet"
         />

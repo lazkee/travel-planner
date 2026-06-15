@@ -62,10 +62,10 @@ function ChecklistItemList({
 
               {!readonly ? (
                 <div className="flex justify-end gap-2 sm:pl-4">
-                  <Button onClick={() => onEdit?.(item)} variant="secondary">
+                  <Button onClick={() => onEdit?.(item)} variant="primary">
                     Edit
                   </Button>
-                  <Button onClick={() => onDelete?.(item)} variant="ghost">
+                  <Button onClick={() => onDelete?.(item)} variant="danger">
                     Delete
                   </Button>
                 </div>

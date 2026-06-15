@@ -234,7 +234,7 @@ function ExpenseFormModal({
           <Button disabled={isSubmitting} onClick={onClose} variant="secondary">
             Cancel
           </Button>
-          <Button isLoading={isSubmitting} type="submit">
+          <Button isLoading={isSubmitting} type="submit" variant="primary">
             {mode === 'create' ? 'Add expense' : 'Save changes'}
           </Button>
         </div>

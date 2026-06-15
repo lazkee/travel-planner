@@ -157,7 +157,11 @@ function ShareTab({ planId, readonly = false }: ShareTabProps) {
         </div>
 
         {!readonly ? (
-          <Button className="w-full sm:w-auto" onClick={handleCreateClick}>
+          <Button
+            className="w-full sm:w-auto"
+            onClick={handleCreateClick}
+            variant="primary"
+          >
             Create share link
           </Button>
         ) : null}
@@ -171,7 +175,9 @@ function ShareTab({ planId, readonly = false }: ShareTabProps) {
         <EmptyState
           action={
             !readonly ? (
-              <Button onClick={handleCreateClick}>Create share link</Button>
+              <Button onClick={handleCreateClick} variant="primary">
+                Create share link
+              </Button>
             ) : null
           }
           description="Create a view or edit link to share this trip with someone else."
@@ -219,7 +225,7 @@ function ShareTab({ planId, readonly = false }: ShareTabProps) {
                         <div className="flex flex-col gap-2 sm:flex-row">
                           <Button
                             onClick={() => void handleCopyLink(share)}
-                            variant="secondary"
+                            variant="primary"
                           >
                             {copiedToken === share.token
                               ? 'Copied'
@@ -227,7 +233,7 @@ function ShareTab({ planId, readonly = false }: ShareTabProps) {
                           </Button>
                           <Button
                             onClick={() => setRevokingShare(share)}
-                            variant="ghost"
+                            variant="danger"
                           >
                             Revoke
                           </Button>

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import type * as React from 'react'
-import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import DateInput from '../../../components/ui/DateInput'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
@@ -148,8 +147,8 @@ function ExpenseFormModal({
         description: toOptionalString(formData.description),
       })
       onClose()
-    } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+    } catch {
+      // Operation errors are shown through toast notifications by the parent.
     } finally {
       setIsSubmitting(false)
     }

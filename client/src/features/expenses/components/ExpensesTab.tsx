@@ -5,6 +5,7 @@ import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import EmptyState from '../../../components/ui/EmptyState'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
+import { useToast } from '../../../context/ToastContext'
 import {
   deleteActivity,
   getActivities,
@@ -101,6 +102,7 @@ function ExpensesTab({
   planId,
   readonly = false,
 }: ExpensesTabProps) {
+  const { showError, showSuccess } = useToast()
   const [expenses, setExpenses] = useState<ExpenseDto[]>([])
   const [activities, setActivities] = useState<ActivityDto[]>([])
   const [error, setError] = useState('')
@@ -179,14 +181,20 @@ function ExpensesTab({
   }
 
   async function handleSaveExpense(request: ExpenseRequestDto) {
-    if (editingExpense) {
-      await updateExpense(planId, editingExpense.id, request)
-    } else {
-      await createExpense(planId, request)
-    }
+    try {
+      if (editingExpense) {
+        await updateExpense(planId, editingExpense.id, request)
+      } else {
+        await createExpense(planId, request)
+      }
 
-    await loadBudgetItems()
-    await onExpensesChanged?.()
+      await loadBudgetItems()
+      await onExpensesChanged?.()
+      showSuccess(editingExpense ? 'Expense updated.' : 'Expense added.')
+    } catch (requestError) {
+      showError(getApiErrorMessage(requestError))
+      throw requestError
+    }
   }
 
   async function handleSaveActivity(request: ActivityRequestDto) {
@@ -194,9 +202,15 @@ function ExpensesTab({
       return
     }
 
-    await updateActivity(planId, editingActivity.id, request)
-    await loadBudgetItems()
-    await onExpensesChanged?.()
+    try {
+      await updateActivity(planId, editingActivity.id, request)
+      await loadBudgetItems()
+      await onExpensesChanged?.()
+      showSuccess('Activity updated.')
+    } catch (requestError) {
+      showError(getApiErrorMessage(requestError))
+      throw requestError
+    }
   }
 
   async function handleConfirmDelete() {
@@ -205,15 +219,15 @@ function ExpensesTab({
     }
 
     setIsDeleting(true)
-    setError('')
 
     try {
       await deleteExpense(planId, deletingExpense.id)
       setDeletingExpense(null)
       await loadBudgetItems()
       await onExpensesChanged?.()
+      showSuccess('Expense deleted.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setDeletingExpense(null)
     } finally {
       setIsDeleting(false)
@@ -226,15 +240,15 @@ function ExpensesTab({
     }
 
     setIsDeletingActivity(true)
-    setError('')
 
     try {
       await deleteActivity(planId, deletingActivity.id)
       setDeletingActivity(null)
       await loadBudgetItems()
       await onExpensesChanged?.()
+      showSuccess('Activity deleted.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setDeletingActivity(null)
     } finally {
       setIsDeletingActivity(false)

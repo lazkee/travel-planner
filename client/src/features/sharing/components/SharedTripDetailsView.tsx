@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
+import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import type { TabItem } from '../../../components/ui/Tabs'
+import { useToast } from '../../../context/ToastContext'
 import OverviewTab from '../../trips/components/OverviewTab'
 import TravelPlanFormModal from '../../trips/components/TravelPlanFormModal'
 import TripDetailsView from '../../trips/components/TripDetailsView'
@@ -94,6 +96,7 @@ function SharedTripDetailsView({
   showBackButton = false,
   token,
 }: SharedTripDetailsViewProps) {
+  const { showError, showSuccess } = useToast()
   const [activeTab, setActiveTab] = useState('overview')
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false)
   const budgetSummary = useMemo(
@@ -108,8 +111,14 @@ function SharedTripDetailsView({
   }
 
   async function handleSavePlan(request: TravelPlanRequestDto) {
-    await updateSharedTravelPlan(token, request)
-    await onReload()
+    try {
+      await updateSharedTravelPlan(token, request)
+      await onReload()
+      showSuccess('Shared trip updated.')
+    } catch (requestError) {
+      showError(getApiErrorMessage(requestError))
+      throw requestError
+    }
   }
 
   const headerBadge = (

@@ -3,7 +3,7 @@ import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import EmptyState from '../../../components/ui/EmptyState'
-import ErrorAlert from '../../../components/ui/ErrorAlert'
+import { useToast } from '../../../context/ToastContext'
 import ChecklistFormModal from '../../checklist/components/ChecklistFormModal'
 import ChecklistItemList from '../../checklist/components/ChecklistItemList'
 import type {
@@ -29,7 +29,7 @@ function SharedChecklistTab({
   readonly,
   token,
 }: SharedChecklistTabProps) {
-  const [error, setError] = useState('')
+  const { showError, showSuccess } = useToast()
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<ChecklistItemDto | null>(null)
   const [deletingItem, setDeletingItem] = useState<ChecklistItemDto | null>(
@@ -54,18 +54,23 @@ function SharedChecklistTab({
   }
 
   async function handleSaveItem(request: ChecklistItemRequestDto) {
-    if (editingItem) {
-      await updateSharedChecklistItem(token, editingItem.id, request)
-    } else {
-      await createSharedChecklistItem(token, request)
-    }
+    try {
+      if (editingItem) {
+        await updateSharedChecklistItem(token, editingItem.id, request)
+      } else {
+        await createSharedChecklistItem(token, request)
+      }
 
-    await onChanged()
+      await onChanged()
+      showSuccess(editingItem ? 'Checklist item updated.' : 'Checklist item added.')
+    } catch (requestError) {
+      showError(getApiErrorMessage(requestError))
+      throw requestError
+    }
   }
 
   async function handleToggleItem(item: ChecklistItemDto) {
     setTogglingItemId(item.id)
-    setError('')
 
     try {
       await updateSharedChecklistItem(token, item.id, {
@@ -73,8 +78,9 @@ function SharedChecklistTab({
         isCompleted: !item.isCompleted,
       })
       await onChanged()
+      showSuccess('Checklist item updated.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
     } finally {
       setTogglingItemId(null)
     }
@@ -86,14 +92,14 @@ function SharedChecklistTab({
     }
 
     setIsDeleting(true)
-    setError('')
 
     try {
       await deleteSharedChecklistItem(token, deletingItem.id)
       setDeletingItem(null)
       await onChanged()
+      showSuccess('Checklist item deleted.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setDeletingItem(null)
     } finally {
       setIsDeleting(false)
@@ -119,8 +125,6 @@ function SharedChecklistTab({
           </Button>
         ) : null}
       </header>
-
-      {error ? <ErrorAlert message={error} /> : null}
 
       {items.length === 0 ? (
         <EmptyState

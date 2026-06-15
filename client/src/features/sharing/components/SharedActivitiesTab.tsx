@@ -3,7 +3,7 @@ import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import EmptyState from '../../../components/ui/EmptyState'
-import ErrorAlert from '../../../components/ui/ErrorAlert'
+import { useToast } from '../../../context/ToastContext'
 import ActivityFormModal from '../../activities/components/ActivityFormModal'
 import ActivityList from '../../activities/components/ActivityList'
 import type {
@@ -29,7 +29,7 @@ function SharedActivitiesTab({
   readonly,
   token,
 }: SharedActivitiesTabProps) {
-  const [error, setError] = useState('')
+  const { showError, showSuccess } = useToast()
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [editingActivity, setEditingActivity] = useState<ActivityDto | null>(
     null,
@@ -55,13 +55,19 @@ function SharedActivitiesTab({
   }
 
   async function handleSaveActivity(request: ActivityRequestDto) {
-    if (editingActivity) {
-      await updateSharedActivity(token, editingActivity.id, request)
-    } else {
-      await createSharedActivity(token, request)
-    }
+    try {
+      if (editingActivity) {
+        await updateSharedActivity(token, editingActivity.id, request)
+      } else {
+        await createSharedActivity(token, request)
+      }
 
-    await onChanged()
+      await onChanged()
+      showSuccess(editingActivity ? 'Activity updated.' : 'Activity added.')
+    } catch (requestError) {
+      showError(getApiErrorMessage(requestError))
+      throw requestError
+    }
   }
 
   async function handleConfirmDelete() {
@@ -70,14 +76,14 @@ function SharedActivitiesTab({
     }
 
     setIsDeleting(true)
-    setError('')
 
     try {
       await deleteSharedActivity(token, deletingActivity.id)
       setDeletingActivity(null)
       await onChanged()
+      showSuccess('Activity deleted.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setDeletingActivity(null)
     } finally {
       setIsDeleting(false)
@@ -103,8 +109,6 @@ function SharedActivitiesTab({
           </Button>
         ) : null}
       </header>
-
-      {error ? <ErrorAlert message={error} /> : null}
 
       {activities.length === 0 ? (
         <EmptyState

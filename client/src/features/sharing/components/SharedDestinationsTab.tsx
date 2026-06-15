@@ -3,7 +3,7 @@ import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import EmptyState from '../../../components/ui/EmptyState'
-import ErrorAlert from '../../../components/ui/ErrorAlert'
+import { useToast } from '../../../context/ToastContext'
 import DestinationCard from '../../destinations/components/DestinationCard'
 import DestinationFormModal from '../../destinations/components/DestinationFormModal'
 import type {
@@ -29,7 +29,7 @@ function SharedDestinationsTab({
   readonly,
   token,
 }: SharedDestinationsTabProps) {
-  const [error, setError] = useState('')
+  const { showError, showSuccess } = useToast()
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [editingDestination, setEditingDestination] =
     useState<DestinationDto | null>(null)
@@ -53,13 +53,21 @@ function SharedDestinationsTab({
   }
 
   async function handleSaveDestination(request: DestinationRequestDto) {
-    if (editingDestination) {
-      await updateSharedDestination(token, editingDestination.id, request)
-    } else {
-      await createSharedDestination(token, request)
-    }
+    try {
+      if (editingDestination) {
+        await updateSharedDestination(token, editingDestination.id, request)
+      } else {
+        await createSharedDestination(token, request)
+      }
 
-    await onChanged()
+      await onChanged()
+      showSuccess(
+        editingDestination ? 'Destination updated.' : 'Destination added.',
+      )
+    } catch (requestError) {
+      showError(getApiErrorMessage(requestError))
+      throw requestError
+    }
   }
 
   async function handleConfirmDelete() {
@@ -68,14 +76,14 @@ function SharedDestinationsTab({
     }
 
     setIsDeleting(true)
-    setError('')
 
     try {
       await deleteSharedDestination(token, deletingDestination.id)
       setDeletingDestination(null)
       await onChanged()
+      showSuccess('Destination deleted.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setDeletingDestination(null)
     } finally {
       setIsDeleting(false)
@@ -103,8 +111,6 @@ function SharedDestinationsTab({
           </Button>
         ) : null}
       </header>
-
-      {error ? <ErrorAlert message={error} /> : null}
 
       {destinations.length === 0 ? (
         <EmptyState

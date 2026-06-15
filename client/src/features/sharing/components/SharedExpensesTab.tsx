@@ -3,7 +3,7 @@ import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import EmptyState from '../../../components/ui/EmptyState'
-import ErrorAlert from '../../../components/ui/ErrorAlert'
+import { useToast } from '../../../context/ToastContext'
 import ActivityFormModal from '../../activities/components/ActivityFormModal'
 import type {
   ActivityDto,
@@ -38,7 +38,7 @@ function SharedExpensesTab({
   readonly,
   token,
 }: SharedExpensesTabProps) {
-  const [error, setError] = useState('')
+  const { showError, showSuccess } = useToast()
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState<ExpenseDto | null>(null)
   const [deletingExpense, setDeletingExpense] = useState<ExpenseDto | null>(
@@ -79,13 +79,19 @@ function SharedExpensesTab({
   }
 
   async function handleSaveExpense(request: ExpenseRequestDto) {
-    if (editingExpense) {
-      await updateSharedExpense(token, editingExpense.id, request)
-    } else {
-      await createSharedExpense(token, request)
-    }
+    try {
+      if (editingExpense) {
+        await updateSharedExpense(token, editingExpense.id, request)
+      } else {
+        await createSharedExpense(token, request)
+      }
 
-    await onChanged()
+      await onChanged()
+      showSuccess(editingExpense ? 'Expense updated.' : 'Expense added.')
+    } catch (requestError) {
+      showError(getApiErrorMessage(requestError))
+      throw requestError
+    }
   }
 
   async function handleSaveActivity(request: ActivityRequestDto) {
@@ -93,8 +99,14 @@ function SharedExpensesTab({
       return
     }
 
-    await updateSharedActivity(token, editingActivity.id, request)
-    await onChanged()
+    try {
+      await updateSharedActivity(token, editingActivity.id, request)
+      await onChanged()
+      showSuccess('Activity updated.')
+    } catch (requestError) {
+      showError(getApiErrorMessage(requestError))
+      throw requestError
+    }
   }
 
   async function handleConfirmDeleteExpense() {
@@ -103,14 +115,14 @@ function SharedExpensesTab({
     }
 
     setIsDeleting(true)
-    setError('')
 
     try {
       await deleteSharedExpense(token, deletingExpense.id)
       setDeletingExpense(null)
       await onChanged()
+      showSuccess('Expense deleted.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setDeletingExpense(null)
     } finally {
       setIsDeleting(false)
@@ -123,14 +135,14 @@ function SharedExpensesTab({
     }
 
     setIsDeleting(true)
-    setError('')
 
     try {
       await deleteSharedActivity(token, deletingActivity.id)
       setDeletingActivity(null)
       await onChanged()
+      showSuccess('Activity deleted.')
     } catch (requestError) {
-      setError(getApiErrorMessage(requestError))
+      showError(getApiErrorMessage(requestError))
       setDeletingActivity(null)
     } finally {
       setIsDeleting(false)
@@ -156,8 +168,6 @@ function SharedExpensesTab({
           </Button>
         ) : null}
       </header>
-
-      {error ? <ErrorAlert message={error} /> : null}
 
       {expenses.length === 0 && activities.length === 0 ? (
         <EmptyState

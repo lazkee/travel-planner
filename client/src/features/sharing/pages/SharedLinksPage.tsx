@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import type * as React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import Card from '../../../components/ui/Card'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import Input from '../../../components/ui/Input'
-import { getSharedTravelPlan } from '../api/sharedPlans.api'
+import {
+  getSharedTravelPlan,
+  isSharedTravelPlanNotFoundError,
+} from '../api/sharedPlan.api'
 
 type SharedLinkFormData = {
   sharedLink: string
@@ -19,8 +23,6 @@ type SharedLinksLocationState = {
   sharedLinkError?: string
   sharedLinkValue?: string
 }
-
-const invalidSharedLinkMessage = 'Invalid shared link or token.'
 
 function extractShareToken(value: string) {
   const trimmedValue = value.trim()
@@ -46,15 +48,15 @@ function extractShareToken(value: string) {
 }
 
 function isInvalidSharedLinkError(error: unknown) {
-  return error instanceof Error && error.message === 'Share link not found.'
+  return isSharedTravelPlanNotFoundError(error)
 }
 
 function getSharedLinkPageError(error: unknown) {
-  if (error instanceof Error && error.message === 'Share link expired.') {
-    return error.message
-  }
+  const message = getApiErrorMessage(error)
 
-  return 'Unable to load the shared trip. Please try again later.'
+  return message === 'Something went wrong.'
+    ? 'Unable to load the shared trip. Please try again later.'
+    : message
 }
 
 function SharedLinksPage({
@@ -102,7 +104,7 @@ function SharedLinksPage({
       navigate(`${targetBasePath}/${encodeURIComponent(token.trim())}`)
     } catch (requestError) {
       if (isInvalidSharedLinkError(requestError)) {
-        setInputError(invalidSharedLinkMessage)
+        setInputError(getApiErrorMessage(requestError))
       } else {
         setPageError(getSharedLinkPageError(requestError))
       }

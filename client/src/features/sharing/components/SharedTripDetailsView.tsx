@@ -11,7 +11,7 @@ import type {
   TravelPlanDto,
   TravelPlanRequestDto,
 } from '../../trips/types/travelPlan.types'
-import { updateSharedTravelPlan } from '../api/sharedEdit.api'
+import { updateSharedTravelPlan } from '../api/sharedPlan.api'
 import type { SharedTravelPlanDto } from '../types/sharedPlan.types'
 import ShareAccessBadge from './ShareAccessBadge'
 import SharedActivitiesTab from './SharedActivitiesTab'
@@ -40,6 +40,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium',
   timeStyle: 'short',
 })
+const readonlyMutationMessage = 'This share link does not allow editing.'
 
 function formatDateTime(value: string) {
   const date = new Date(value)
@@ -104,13 +105,19 @@ function SharedTripDetailsView({
     [sharedPlan],
   )
   const travelPlan = useMemo(() => toTravelPlanDto(sharedPlan), [sharedPlan])
-  const readonly = sharedPlan.accessLevel !== 'Edit'
+  const readonly = sharedPlan.accessLevel === 'View'
 
   function handleClosePlanModal() {
     setIsPlanModalOpen(false)
   }
 
   async function handleSavePlan(request: TravelPlanRequestDto) {
+    if (readonly) {
+      const error = new Error(readonlyMutationMessage)
+      showError(error.message)
+      throw error
+    }
+
     try {
       await updateSharedTravelPlan(token, request)
       await onReload()
@@ -212,13 +219,15 @@ function SharedTripDetailsView({
         ) : null}
       </TripDetailsView>
 
-      <TravelPlanFormModal
-        initialPlan={travelPlan}
-        isOpen={isPlanModalOpen}
-        mode="edit"
-        onClose={handleClosePlanModal}
-        onSubmit={handleSavePlan}
-      />
+      {!readonly ? (
+        <TravelPlanFormModal
+          initialPlan={travelPlan}
+          isOpen={isPlanModalOpen}
+          mode="edit"
+          onClose={handleClosePlanModal}
+          onSubmit={handleSavePlan}
+        />
+      ) : null}
     </>
   )
 }

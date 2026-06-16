@@ -16,12 +16,14 @@ import type {
   ExpenseRequestDto,
 } from '../../expenses/types/expense.types'
 import {
-  createSharedExpense,
   deleteSharedActivity,
-  deleteSharedExpense,
   updateSharedActivity,
+} from '../api/sharedActivities.api'
+import {
+  createSharedExpense,
+  deleteSharedExpense,
   updateSharedExpense,
-} from '../api/sharedEdit.api'
+} from '../api/sharedExpenses.api'
 
 type SharedExpensesTabProps = {
   activities: ActivityDto[]
@@ -32,6 +34,8 @@ type SharedExpensesTabProps = {
   token: string
   onChanged: () => Promise<void>
 }
+
+const readonlyMutationMessage = 'This share link does not allow editing.'
 
 function SharedExpensesTab({
   activities,
@@ -58,11 +62,21 @@ function SharedExpensesTab({
   const [isDeleting, setIsDeleting] = useState(false)
 
   function handleAddClick() {
+    if (readonly) {
+      showError(readonlyMutationMessage)
+      return
+    }
+
     setEditingExpense(null)
     setIsExpenseModalOpen(true)
   }
 
   function handleEditExpense(expense: ExpenseDto) {
+    if (readonly) {
+      showError(readonlyMutationMessage)
+      return
+    }
+
     setEditingExpense(expense)
     setIsExpenseModalOpen(true)
   }
@@ -73,6 +87,11 @@ function SharedExpensesTab({
   }
 
   function handleEditActivity(activity: ActivityDto) {
+    if (readonly) {
+      showError(readonlyMutationMessage)
+      return
+    }
+
     setEditingActivity(activity)
     setIsActivityModalOpen(true)
   }
@@ -83,6 +102,12 @@ function SharedExpensesTab({
   }
 
   async function handleSaveExpense(request: ExpenseRequestDto) {
+    if (readonly) {
+      const error = new Error(readonlyMutationMessage)
+      showError(error.message)
+      throw error
+    }
+
     try {
       if (editingExpense) {
         await updateSharedExpense(token, editingExpense.id, request)
@@ -103,6 +128,12 @@ function SharedExpensesTab({
       return
     }
 
+    if (readonly) {
+      const error = new Error(readonlyMutationMessage)
+      showError(error.message)
+      throw error
+    }
+
     try {
       await updateSharedActivity(token, editingActivity.id, request)
       await onChanged()
@@ -115,6 +146,12 @@ function SharedExpensesTab({
 
   async function handleConfirmDeleteExpense() {
     if (!deletingExpense) {
+      return
+    }
+
+    if (readonly) {
+      setDeletingExpense(null)
+      showError(readonlyMutationMessage)
       return
     }
 
@@ -135,6 +172,12 @@ function SharedExpensesTab({
 
   async function handleConfirmDeleteActivity() {
     if (!deletingActivity) {
+      return
+    }
+
+    if (readonly) {
+      setDeletingActivity(null)
+      showError(readonlyMutationMessage)
       return
     }
 
@@ -198,51 +241,55 @@ function SharedExpensesTab({
         />
       )}
 
-      <ExpenseFormModal
-        initialExpense={editingExpense}
-        isOpen={isExpenseModalOpen}
-        mode={editingExpense ? 'edit' : 'create'}
-        onClose={handleCloseExpenseModal}
-        onSubmit={handleSaveExpense}
-      />
+      {!readonly ? (
+        <>
+          <ExpenseFormModal
+            initialExpense={editingExpense}
+            isOpen={isExpenseModalOpen}
+            mode={editingExpense ? 'edit' : 'create'}
+            onClose={handleCloseExpenseModal}
+            onSubmit={handleSaveExpense}
+          />
 
-      <ActivityFormModal
-        initialActivity={editingActivity}
-        isOpen={isActivityModalOpen}
-        mode="edit"
-        onClose={handleCloseActivityModal}
-        onSubmit={handleSaveActivity}
-        planEndDate={planEndDate}
-        planStartDate={planStartDate}
-      />
+          <ActivityFormModal
+            initialActivity={editingActivity}
+            isOpen={isActivityModalOpen}
+            mode="edit"
+            onClose={handleCloseActivityModal}
+            onSubmit={handleSaveActivity}
+            planEndDate={planEndDate}
+            planStartDate={planStartDate}
+          />
 
-      <ConfirmDialog
-        confirmLabel="Delete expense"
-        isOpen={Boolean(deletingExpense)}
-        isSubmitting={isDeleting}
-        message={
-          deletingExpense
-            ? `Delete "${deletingExpense.name}"? This cannot be undone.`
-            : 'Delete this expense?'
-        }
-        onCancel={() => setDeletingExpense(null)}
-        onConfirm={handleConfirmDeleteExpense}
-        title="Delete expense"
-      />
+          <ConfirmDialog
+            confirmLabel="Delete expense"
+            isOpen={Boolean(deletingExpense)}
+            isSubmitting={isDeleting}
+            message={
+              deletingExpense
+                ? `Delete "${deletingExpense.name}"? This cannot be undone.`
+                : 'Delete this expense?'
+            }
+            onCancel={() => setDeletingExpense(null)}
+            onConfirm={handleConfirmDeleteExpense}
+            title="Delete expense"
+          />
 
-      <ConfirmDialog
-        confirmLabel="Delete activity"
-        isOpen={Boolean(deletingActivity)}
-        isSubmitting={isDeleting}
-        message={
-          deletingActivity
-            ? `Delete "${deletingActivity.name}"? This removes the activity and its planned cost.`
-            : 'Delete this activity?'
-        }
-        onCancel={() => setDeletingActivity(null)}
-        onConfirm={handleConfirmDeleteActivity}
-        title="Delete activity"
-      />
+          <ConfirmDialog
+            confirmLabel="Delete activity"
+            isOpen={Boolean(deletingActivity)}
+            isSubmitting={isDeleting}
+            message={
+              deletingActivity
+                ? `Delete "${deletingActivity.name}"? This removes the activity and its planned cost.`
+                : 'Delete this activity?'
+            }
+            onCancel={() => setDeletingActivity(null)}
+            onConfirm={handleConfirmDeleteActivity}
+            title="Delete activity"
+          />
+        </>
+      ) : null}
     </section>
   )
 }

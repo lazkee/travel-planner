@@ -15,9 +15,10 @@ import {
   createSharedActivity,
   deleteSharedActivity,
   updateSharedActivity,
-} from '../api/sharedEdit.api'
+} from '../api/sharedActivities.api'
 
 type ActivityViewMode = 'list' | 'calendar'
+const readonlyMutationMessage = 'This share link does not allow editing.'
 
 type SharedActivitiesTabProps = {
   activities: ActivityDto[]
@@ -48,11 +49,21 @@ function SharedActivitiesTab({
   const [isDeleting, setIsDeleting] = useState(false)
 
   function handleAddClick() {
+    if (readonly) {
+      showError(readonlyMutationMessage)
+      return
+    }
+
     setEditingActivity(null)
     setIsFormModalOpen(true)
   }
 
   function handleEditClick(activity: ActivityDto) {
+    if (readonly) {
+      showError(readonlyMutationMessage)
+      return
+    }
+
     setEditingActivity(activity)
     setIsFormModalOpen(true)
   }
@@ -63,6 +74,12 @@ function SharedActivitiesTab({
   }
 
   async function handleSaveActivity(request: ActivityRequestDto) {
+    if (readonly) {
+      const error = new Error(readonlyMutationMessage)
+      showError(error.message)
+      throw error
+    }
+
     try {
       if (editingActivity) {
         await updateSharedActivity(token, editingActivity.id, request)
@@ -80,6 +97,12 @@ function SharedActivitiesTab({
 
   async function handleConfirmDelete() {
     if (!deletingActivity) {
+      return
+    }
+
+    if (readonly) {
+      setDeletingActivity(null)
+      showError(readonlyMutationMessage)
       return
     }
 
@@ -179,29 +202,33 @@ function SharedActivitiesTab({
         />
       ) : null}
 
-      <ActivityFormModal
-        initialActivity={editingActivity}
-        isOpen={isFormModalOpen}
-        mode={editingActivity ? 'edit' : 'create'}
-        onClose={handleCloseFormModal}
-        onSubmit={handleSaveActivity}
-        planEndDate={planEndDate}
-        planStartDate={planStartDate}
-      />
+      {!readonly ? (
+        <>
+          <ActivityFormModal
+            initialActivity={editingActivity}
+            isOpen={isFormModalOpen}
+            mode={editingActivity ? 'edit' : 'create'}
+            onClose={handleCloseFormModal}
+            onSubmit={handleSaveActivity}
+            planEndDate={planEndDate}
+            planStartDate={planStartDate}
+          />
 
-      <ConfirmDialog
-        confirmLabel="Delete activity"
-        isOpen={Boolean(deletingActivity)}
-        isSubmitting={isDeleting}
-        message={
-          deletingActivity
-            ? `Delete "${deletingActivity.name}"? This cannot be undone.`
-            : 'Delete this activity?'
-        }
-        onCancel={() => setDeletingActivity(null)}
-        onConfirm={handleConfirmDelete}
-        title="Delete activity"
-      />
+          <ConfirmDialog
+            confirmLabel="Delete activity"
+            isOpen={Boolean(deletingActivity)}
+            isSubmitting={isDeleting}
+            message={
+              deletingActivity
+                ? `Delete "${deletingActivity.name}"? This cannot be undone.`
+                : 'Delete this activity?'
+            }
+            onCancel={() => setDeletingActivity(null)}
+            onConfirm={handleConfirmDelete}
+            title="Delete activity"
+          />
+        </>
+      ) : null}
     </section>
   )
 }

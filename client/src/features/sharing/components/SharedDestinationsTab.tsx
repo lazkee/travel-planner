@@ -14,7 +14,7 @@ import {
   createSharedDestination,
   deleteSharedDestination,
   updateSharedDestination,
-} from '../api/sharedEdit.api'
+} from '../api/sharedDestinations.api'
 
 type SharedDestinationsTabProps = {
   destinations: DestinationDto[]
@@ -22,6 +22,8 @@ type SharedDestinationsTabProps = {
   token: string
   onChanged: () => Promise<void>
 }
+
+const readonlyMutationMessage = 'This share link does not allow editing.'
 
 function SharedDestinationsTab({
   destinations,
@@ -38,11 +40,21 @@ function SharedDestinationsTab({
   const [isDeleting, setIsDeleting] = useState(false)
 
   function handleAddClick() {
+    if (readonly) {
+      showError(readonlyMutationMessage)
+      return
+    }
+
     setEditingDestination(null)
     setIsFormModalOpen(true)
   }
 
   function handleEditClick(destination: DestinationDto) {
+    if (readonly) {
+      showError(readonlyMutationMessage)
+      return
+    }
+
     setEditingDestination(destination)
     setIsFormModalOpen(true)
   }
@@ -53,6 +65,12 @@ function SharedDestinationsTab({
   }
 
   async function handleSaveDestination(request: DestinationRequestDto) {
+    if (readonly) {
+      const error = new Error(readonlyMutationMessage)
+      showError(error.message)
+      throw error
+    }
+
     try {
       if (editingDestination) {
         await updateSharedDestination(token, editingDestination.id, request)
@@ -72,6 +90,12 @@ function SharedDestinationsTab({
 
   async function handleConfirmDelete() {
     if (!deletingDestination) {
+      return
+    }
+
+    if (readonly) {
+      setDeletingDestination(null)
+      showError(readonlyMutationMessage)
       return
     }
 
@@ -138,27 +162,31 @@ function SharedDestinationsTab({
         </div>
       )}
 
-      <DestinationFormModal
-        initialDestination={editingDestination}
-        isOpen={isFormModalOpen}
-        mode={editingDestination ? 'edit' : 'create'}
-        onClose={handleCloseFormModal}
-        onSubmit={handleSaveDestination}
-      />
+      {!readonly ? (
+        <>
+          <DestinationFormModal
+            initialDestination={editingDestination}
+            isOpen={isFormModalOpen}
+            mode={editingDestination ? 'edit' : 'create'}
+            onClose={handleCloseFormModal}
+            onSubmit={handleSaveDestination}
+          />
 
-      <ConfirmDialog
-        confirmLabel="Delete destination"
-        isOpen={Boolean(deletingDestination)}
-        isSubmitting={isDeleting}
-        message={
-          deletingDestination
-            ? `Delete "${deletingDestination.name}"? This cannot be undone.`
-            : 'Delete this destination?'
-        }
-        onCancel={() => setDeletingDestination(null)}
-        onConfirm={handleConfirmDelete}
-        title="Delete destination"
-      />
+          <ConfirmDialog
+            confirmLabel="Delete destination"
+            isOpen={Boolean(deletingDestination)}
+            isSubmitting={isDeleting}
+            message={
+              deletingDestination
+                ? `Delete "${deletingDestination.name}"? This cannot be undone.`
+                : 'Delete this destination?'
+            }
+            onCancel={() => setDeletingDestination(null)}
+            onConfirm={handleConfirmDelete}
+            title="Delete destination"
+          />
+        </>
+      ) : null}
     </section>
   )
 }

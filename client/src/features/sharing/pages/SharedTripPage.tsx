@@ -6,23 +6,15 @@ import Card from '../../../components/ui/Card'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
 import SharedTripDetailsView from '../components/SharedTripDetailsView'
-import { getSharedTravelPlan } from '../api/sharedPlans.api'
+import { getSharedTravelPlan } from '../api/sharedPlan.api'
 import type { SharedTravelPlanDto } from '../types/sharedPlan.types'
 
 function getSharedPageErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message === 'Share link expired.') {
-    return error.message
-  }
-
   const fallbackMessage = getApiErrorMessage(error)
 
-  return fallbackMessage === 'Unable to connect to the server.'
-    ? fallbackMessage
-    : 'Unable to load the shared trip. Please try again later.'
-}
-
-function isInvalidSharedLinkError(error: unknown) {
-  return error instanceof Error && error.message === 'Share link not found.'
+  return fallbackMessage === 'Something went wrong.'
+    ? 'Unable to load the shared trip. Please try again later.'
+    : fallbackMessage
 }
 
 function SharedTripPage() {
@@ -51,21 +43,6 @@ function SharedTripPage() {
         const nextSharedPlan = await getSharedTravelPlan(token)
         setSharedPlan(nextSharedPlan)
       } catch (requestError) {
-        if (isInvalidSharedLinkError(requestError)) {
-          const targetPath = location.pathname.startsWith('/app/shared')
-            ? '/app/shared'
-            : '/shared'
-
-          navigate(targetPath, {
-            replace: true,
-            state: {
-              sharedLinkError: 'Invalid shared link or token.',
-              sharedLinkValue: token,
-            },
-          })
-          return
-        }
-
         setSharedPlan(null)
         setError(getSharedPageErrorMessage(requestError))
       } finally {
@@ -74,7 +51,7 @@ function SharedTripPage() {
         }
       }
     },
-    [location.pathname, navigate, token],
+    [token],
   )
 
   useEffect(() => {

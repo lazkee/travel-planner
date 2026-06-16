@@ -6,10 +6,28 @@ import type {
   BudgetCategorySummaryDto,
   BudgetSummaryDto,
 } from '../../trips/types/budgetSummary.types'
+import type {
+  TravelPlanDto,
+  TravelPlanRequestDto,
+} from '../../trips/types/travelPlan.types'
 import type { ShareAccessLevel } from '../types/share.types'
 import type { SharedTravelPlanDto } from '../types/sharedPlan.types'
 
 type UnknownRecord = Record<string, unknown>
+type SharedTravelPlanErrorKind = 'not-found' | 'expired'
+
+export class SharedTravelPlanError extends Error {
+  kind: SharedTravelPlanErrorKind
+
+  constructor(kind: SharedTravelPlanErrorKind, message: string) {
+    super(message)
+    this.kind = kind
+  }
+}
+
+function getSharedBasePath(token: string) {
+  return `/api/shared/${encodeURIComponent(token)}`
+}
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === 'object' && value !== null
@@ -65,6 +83,16 @@ function getArray(source: UnknownRecord, keys: string[]) {
   const value = getRecordValue(source, keys)
 
   return Array.isArray(value) ? value : []
+}
+
+function getResponseMessage(error: unknown) {
+  if (!axios.isAxiosError(error)) {
+    return ''
+  }
+
+  const data = error.response?.data
+
+  return isRecord(data) && typeof data.message === 'string' ? data.message : ''
 }
 
 function normalizeAccessLevel(value: string): ShareAccessLevel {
@@ -204,26 +232,63 @@ function normalizeSharedTravelPlan(data: unknown): SharedTravelPlanDto {
   }
 }
 
+async function runSharedPlanMutation<T>(
+  request: () => Promise<T>,
+): Promise<T> {
+  try {
+    return await request()
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 403) {
+      throw new Error(
+        getResponseMessage(error) || 'This share link does not allow editing.',
+      )
+    }
+
+    throw error
+  }
+}
+
+export function isSharedTravelPlanNotFoundError(error: unknown) {
+  return error instanceof SharedTravelPlanError && error.kind === 'not-found'
+}
+
 export async function getSharedTravelPlan(
   token: string,
 ): Promise<SharedTravelPlanDto> {
   try {
     const response = await travelServiceClient.get(
-      `/api/shared/${encodeURIComponent(token)}`,
+      `${getSharedBasePath(token)}/travel-plan`,
     )
 
     return normalizeSharedTravelPlan(response.data)
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 404) {
-        throw new Error('Share link not found.')
+        throw new SharedTravelPlanError(
+          'not-found',
+          getResponseMessage(error) || 'Shared trip not found.',
+        )
       }
 
       if (error.response?.status === 410) {
-        throw new Error('Share link expired.')
+        throw new SharedTravelPlanError(
+          'expired',
+          getResponseMessage(error) || 'Share link expired.',
+        )
       }
     }
 
     throw error
   }
+}
+
+export async function updateSharedTravelPlan(
+  token: string,
+  request: TravelPlanRequestDto,
+): Promise<TravelPlanDto> {
+  const response = await runSharedPlanMutation(() =>
+    travelServiceClient.put(`${getSharedBasePath(token)}/travel-plan`, request),
+  )
+
+  return response.data as TravelPlanDto
 }

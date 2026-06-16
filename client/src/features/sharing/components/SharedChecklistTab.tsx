@@ -14,7 +14,7 @@ import {
   createSharedChecklistItem,
   deleteSharedChecklistItem,
   updateSharedChecklistItem,
-} from '../api/sharedEdit.api'
+} from '../api/sharedChecklistItems.api'
 
 type SharedChecklistTabProps = {
   items: ChecklistItemDto[]
@@ -22,6 +22,8 @@ type SharedChecklistTabProps = {
   token: string
   onChanged: () => Promise<void>
 }
+
+const readonlyMutationMessage = 'This share link does not allow editing.'
 
 function SharedChecklistTab({
   items,
@@ -39,11 +41,21 @@ function SharedChecklistTab({
   const [togglingItemId, setTogglingItemId] = useState<number | null>(null)
 
   function handleAddClick() {
+    if (readonly) {
+      showError(readonlyMutationMessage)
+      return
+    }
+
     setEditingItem(null)
     setIsFormModalOpen(true)
   }
 
   function handleEditClick(item: ChecklistItemDto) {
+    if (readonly) {
+      showError(readonlyMutationMessage)
+      return
+    }
+
     setEditingItem(item)
     setIsFormModalOpen(true)
   }
@@ -54,6 +66,12 @@ function SharedChecklistTab({
   }
 
   async function handleSaveItem(request: ChecklistItemRequestDto) {
+    if (readonly) {
+      const error = new Error(readonlyMutationMessage)
+      showError(error.message)
+      throw error
+    }
+
     try {
       if (editingItem) {
         await updateSharedChecklistItem(token, editingItem.id, request)
@@ -70,6 +88,11 @@ function SharedChecklistTab({
   }
 
   async function handleToggleItem(item: ChecklistItemDto) {
+    if (readonly) {
+      showError(readonlyMutationMessage)
+      return
+    }
+
     setTogglingItemId(item.id)
 
     try {
@@ -88,6 +111,12 @@ function SharedChecklistTab({
 
   async function handleConfirmDelete() {
     if (!deletingItem) {
+      return
+    }
+
+    if (readonly) {
+      setDeletingItem(null)
+      showError(readonlyMutationMessage)
       return
     }
 
@@ -149,27 +178,31 @@ function SharedChecklistTab({
         />
       )}
 
-      <ChecklistFormModal
-        initialItem={editingItem}
-        isOpen={isFormModalOpen}
-        mode={editingItem ? 'edit' : 'create'}
-        onClose={handleCloseFormModal}
-        onSubmit={handleSaveItem}
-      />
+      {!readonly ? (
+        <>
+          <ChecklistFormModal
+            initialItem={editingItem}
+            isOpen={isFormModalOpen}
+            mode={editingItem ? 'edit' : 'create'}
+            onClose={handleCloseFormModal}
+            onSubmit={handleSaveItem}
+          />
 
-      <ConfirmDialog
-        confirmLabel="Delete item"
-        isOpen={Boolean(deletingItem)}
-        isSubmitting={isDeleting}
-        message={
-          deletingItem
-            ? `Delete "${deletingItem.text}"? This cannot be undone.`
-            : 'Delete this checklist item?'
-        }
-        onCancel={() => setDeletingItem(null)}
-        onConfirm={handleConfirmDelete}
-        title="Delete checklist item"
-      />
+          <ConfirmDialog
+            confirmLabel="Delete item"
+            isOpen={Boolean(deletingItem)}
+            isSubmitting={isDeleting}
+            message={
+              deletingItem
+                ? `Delete "${deletingItem.text}"? This cannot be undone.`
+                : 'Delete this checklist item?'
+            }
+            onCancel={() => setDeletingItem(null)}
+            onConfirm={handleConfirmDelete}
+            title="Delete checklist item"
+          />
+        </>
+      ) : null}
     </section>
   )
 }

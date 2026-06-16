@@ -1,5 +1,6 @@
 using System.Globalization;
 using iText.IO.Font.Constants;
+using iText.IO.Image;
 using iText.Kernel.Font;
 using iText.Kernel.Pdf;
 using iText.Layout;
@@ -18,13 +19,16 @@ public class TravelPlanPdfExportService : ITravelPlanPdfExportService
 {
     private readonly TravelDbContext _context;
     private readonly ITravelPlanOwnershipValidator _ownershipValidator;
+    private readonly ISharingClientService _sharingClientService;
 
     public TravelPlanPdfExportService(
         TravelDbContext context,
-        ITravelPlanOwnershipValidator ownershipValidator)
+        ITravelPlanOwnershipValidator ownershipValidator,
+        ISharingClientService sharingClientService)
     {
         _context = context;
         _ownershipValidator = ownershipValidator;
+        _sharingClientService = sharingClientService;
     }
 
     public async Task<Result<TravelPlanPdfExportResult>> ExportAsync(int userId, int planId)
@@ -43,7 +47,19 @@ public class TravelPlanPdfExportService : ITravelPlanPdfExportService
         if (plan == null)
             return Result<TravelPlanPdfExportResult>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
 
-        var content = GeneratePdf(plan);
+        List<ShareResponseDto>? shares = null;
+        try
+        {
+            var sharesResult = await _sharingClientService.GetSharesForPlanAsync(planId);
+            if (sharesResult.IsSuccess && sharesResult.Value is { Count: > 0 })
+                shares = sharesResult.Value;
+        }
+        catch
+        {
+            shares = null;
+        }
+
+        var content = GeneratePdf(plan, shares);
 
         return Result<TravelPlanPdfExportResult>.Success(new TravelPlanPdfExportResult
         {
@@ -51,7 +67,7 @@ public class TravelPlanPdfExportService : ITravelPlanPdfExportService
         });
     }
 
-    private static byte[] GeneratePdf(TravelPlan plan)
+    private static byte[] GeneratePdf(TravelPlan plan, List<ShareResponseDto>? shares)
     {
         using var stream = new MemoryStream();
         using var writer = new PdfWriter(stream);
@@ -65,18 +81,15 @@ public class TravelPlanPdfExportService : ITravelPlanPdfExportService
             .SetFontSize(20)
             .SetTextAlignment(TextAlignment.CENTER));
 
-        document.Add(new Paragraph($"Trip: {plan.Name}")
-            .SetFont(boldFont)
-            .SetFontSize(14));
-        document.Add(new Paragraph($"Date range: {FormatDate(plan.StartDate)} - {FormatDate(plan.EndDate)}"));
-        document.Add(new Paragraph($"Description: {FormatOptional(plan.Description, "No description.")}"));
-        document.Add(new Paragraph($"Notes: {FormatOptional(plan.Notes, "No notes.")}"));
-
+        AddTripOverview(document, boldFont, plan);
         AddBudgetSummary(document, boldFont, plan);
         AddDestinations(document, boldFont, plan);
         AddActivities(document, boldFont, plan);
         AddExpenses(document, boldFont, plan);
         AddChecklistItems(document, boldFont, plan);
+
+        if (shares != null)
+            AddSharedAccess(document, boldFont, shares);
 
         document.Add(new Paragraph($"Generated: {DateTime.UtcNow:yyyy-MM-dd HH:mm} UTC")
             .SetFontSize(9)
@@ -84,6 +97,28 @@ public class TravelPlanPdfExportService : ITravelPlanPdfExportService
 
         document.Close();
         return stream.ToArray();
+    }
+
+    private static void AddTripOverview(Document document, PdfFont boldFont, TravelPlan plan)
+    {
+        AddSectionTitle(document, boldFont, "Trip overview");
+
+        var table = new Table(UnitValue.CreatePercentArray(new float[] { 25, 75 }))
+            .UseAllAvailableWidth();
+
+        table.AddCell(BoldCell("Trip", boldFont));
+        table.AddCell(DataCell(plan.Name));
+
+        table.AddCell(BoldCell("Date range", boldFont));
+        table.AddCell(DataCell($"{FormatDate(plan.StartDate)} – {FormatDate(plan.EndDate)}"));
+
+        table.AddCell(BoldCell("Description", boldFont));
+        table.AddCell(DataCell(FormatOptional(plan.Description, "—")));
+
+        table.AddCell(BoldCell("Notes", boldFont));
+        table.AddCell(DataCell(FormatOptional(plan.Notes, "—")));
+
+        document.Add(table);
     }
 
     private static void AddBudgetSummary(Document document, PdfFont boldFont, TravelPlan plan)
@@ -96,9 +131,23 @@ public class TravelPlanPdfExportService : ITravelPlanPdfExportService
         var remainingBudget = plan.Budget - totalSpent;
 
         AddSectionTitle(document, boldFont, "Budget");
-        document.Add(new Paragraph($"Budget: {FormatAmount(plan.Budget)}"));
-        document.Add(new Paragraph($"Total spent: {FormatAmount(totalSpent)}"));
-        document.Add(new Paragraph($"Remaining budget: {FormatAmount(remainingBudget)}"));
+
+        var table = new Table(UnitValue.CreatePercentArray(new float[] { 55, 45 }))
+            .UseAllAvailableWidth();
+
+        table.AddHeaderCell(BoldCell("Item", boldFont));
+        table.AddHeaderCell(BoldCell("Amount", boldFont));
+
+        table.AddCell(DataCell("Budget"));
+        table.AddCell(DataCell(FormatMoney(plan.Budget)));
+
+        table.AddCell(DataCell("Total spent"));
+        table.AddCell(DataCell(FormatMoney(totalSpent)));
+
+        table.AddCell(DataCell("Remaining budget"));
+        table.AddCell(DataCell(FormatMoney(remainingBudget)));
+
+        document.Add(table);
     }
 
     private static void AddDestinations(Document document, PdfFont boldFont, TravelPlan plan)
@@ -117,14 +166,27 @@ public class TravelPlanPdfExportService : ITravelPlanPdfExportService
             return;
         }
 
-        foreach (var destination in destinations)
-        {
-            var text = $"{destination.Name}, {destination.Location} ({FormatDate(destination.ArrivalDate)} - {FormatDate(destination.DepartureDate)})";
-            document.Add(new Paragraph($"- {text}"));
+        var table = new Table(UnitValue.CreatePercentArray(new float[] { 28, 28, 22, 22 }))
+            .UseAllAvailableWidth();
 
-            if (!string.IsNullOrWhiteSpace(destination.Description))
-                document.Add(new Paragraph($"  {destination.Description}").SetFontSize(10));
+        table.AddHeaderCell(BoldCell("Name", boldFont));
+        table.AddHeaderCell(BoldCell("Location", boldFont));
+        table.AddHeaderCell(BoldCell("Arrival", boldFont));
+        table.AddHeaderCell(BoldCell("Departure", boldFont));
+
+        foreach (var d in destinations)
+        {
+            table.AddCell(DataCell(d.Name));
+            table.AddCell(DataCell(d.Location));
+            table.AddCell(DataCell(FormatDate(d.ArrivalDate)));
+            table.AddCell(DataCell(FormatDate(d.DepartureDate)));
+
+            if (!string.IsNullOrWhiteSpace(d.Description))
+                table.AddCell(new Cell(1, 4)
+                    .Add(new Paragraph(d.Description).SetFontSize(9)));
         }
+
+        document.Add(table);
     }
 
     private static void AddActivities(Document document, PdfFont boldFont, TravelPlan plan)
@@ -143,18 +205,34 @@ public class TravelPlanPdfExportService : ITravelPlanPdfExportService
             return;
         }
 
-        foreach (var activity in activities)
+        var table = new Table(UnitValue.CreatePercentArray(new float[] { 13, 10, 22, 20, 15, 20 }))
+            .UseAllAvailableWidth();
+
+        table.AddHeaderCell(BoldCell("Date", boldFont));
+        table.AddHeaderCell(BoldCell("Time", boldFont));
+        table.AddHeaderCell(BoldCell("Name", boldFont));
+        table.AddHeaderCell(BoldCell("Location", boldFont));
+        table.AddHeaderCell(BoldCell("Status", boldFont));
+        table.AddHeaderCell(BoldCell("Est. cost", boldFont));
+
+        foreach (var a in activities)
         {
-            var time = activity.Time.HasValue ? $" {activity.Time.Value:hh\\:mm}" : string.Empty;
-            var location = string.IsNullOrWhiteSpace(activity.Location) ? string.Empty : $" at {activity.Location}";
-            var cost = activity.EstimatedCost > 0 ? $", estimate {FormatAmount(activity.EstimatedCost)}" : string.Empty;
+            var time = a.Time.HasValue ? a.Time.Value.ToString(@"hh\:mm") : "—";
+            var cost = a.EstimatedCost > 0 ? FormatMoney(a.EstimatedCost) : "—";
 
-            document.Add(new Paragraph(
-                $"- {FormatDate(activity.Date)}{time}: {activity.Name}{location} ({activity.Status}{cost})"));
+            table.AddCell(DataCell(FormatDate(a.Date)));
+            table.AddCell(DataCell(time));
+            table.AddCell(DataCell(a.Name));
+            table.AddCell(DataCell(FormatOptional(a.Location, "—")));
+            table.AddCell(DataCell(a.Status.ToString()));
+            table.AddCell(DataCell(cost));
 
-            if (!string.IsNullOrWhiteSpace(activity.Description))
-                document.Add(new Paragraph($"  {activity.Description}").SetFontSize(10));
+            if (!string.IsNullOrWhiteSpace(a.Description))
+                table.AddCell(new Cell(1, 6)
+                    .Add(new Paragraph(a.Description).SetFontSize(9)));
         }
+
+        document.Add(table);
     }
 
     private static void AddExpenses(Document document, PdfFont boldFont, TravelPlan plan)
@@ -172,14 +250,27 @@ public class TravelPlanPdfExportService : ITravelPlanPdfExportService
             return;
         }
 
-        foreach (var expense in expenses)
-        {
-            document.Add(new Paragraph(
-                $"- {FormatDate(expense.Date)}: {expense.Name} ({expense.Category}) - {FormatAmount(expense.Amount)}"));
+        var table = new Table(UnitValue.CreatePercentArray(new float[] { 15, 35, 25, 25 }))
+            .UseAllAvailableWidth();
 
-            if (!string.IsNullOrWhiteSpace(expense.Description))
-                document.Add(new Paragraph($"  {expense.Description}").SetFontSize(10));
+        table.AddHeaderCell(BoldCell("Date", boldFont));
+        table.AddHeaderCell(BoldCell("Name", boldFont));
+        table.AddHeaderCell(BoldCell("Category", boldFont));
+        table.AddHeaderCell(BoldCell("Amount", boldFont));
+
+        foreach (var e in expenses)
+        {
+            table.AddCell(DataCell(FormatDate(e.Date)));
+            table.AddCell(DataCell(e.Name));
+            table.AddCell(DataCell(e.Category.ToString()));
+            table.AddCell(DataCell(FormatMoney(e.Amount)));
+
+            if (!string.IsNullOrWhiteSpace(e.Description))
+                table.AddCell(new Cell(1, 4)
+                    .Add(new Paragraph(e.Description).SetFontSize(9)));
         }
+
+        document.Add(table);
     }
 
     private static void AddChecklistItems(Document document, PdfFont boldFont, TravelPlan plan)
@@ -197,10 +288,62 @@ public class TravelPlanPdfExportService : ITravelPlanPdfExportService
             return;
         }
 
+        var table = new Table(UnitValue.CreatePercentArray(new float[] { 15, 85 }))
+            .UseAllAvailableWidth();
+
+        table.AddHeaderCell(BoldCell("Status", boldFont));
+        table.AddHeaderCell(BoldCell("Item", boldFont));
+
         foreach (var item in checklistItems)
         {
-            var status = item.IsCompleted ? "Done" : "Open";
-            document.Add(new Paragraph($"- [{status}] {item.Text}"));
+            table.AddCell(DataCell(item.IsCompleted ? "Done" : "Open"));
+            table.AddCell(DataCell(item.Text));
+        }
+
+        document.Add(table);
+    }
+
+    private static void AddSharedAccess(Document document, PdfFont boldFont, List<ShareResponseDto> shares)
+    {
+        AddSectionTitle(document, boldFont, "Shared access");
+
+        const string dataUrlPrefix = "data:image/png;base64,";
+
+        foreach (var share in shares)
+        {
+            var table = new Table(UnitValue.CreatePercentArray(new float[] { 25, 75 }))
+                .UseAllAvailableWidth();
+
+            table.AddCell(BoldCell("Access", boldFont));
+            table.AddCell(DataCell(share.AccessLevel.ToString()));
+
+            table.AddCell(BoldCell("Expires", boldFont));
+            table.AddCell(DataCell($"{share.ExpiresAtUtc:yyyy-MM-dd HH:mm} UTC"));
+
+            table.AddCell(BoldCell("URL", boldFont));
+            table.AddCell(new Cell().Add(new Paragraph(share.ShareUrl).SetFontSize(8)));
+
+            document.Add(table);
+
+            if (!string.IsNullOrWhiteSpace(share.QrCodeDataUrl))
+            {
+                var base64 = share.QrCodeDataUrl.StartsWith(dataUrlPrefix)
+                    ? share.QrCodeDataUrl[dataUrlPrefix.Length..]
+                    : share.QrCodeDataUrl;
+
+                try
+                {
+                    var imageBytes = Convert.FromBase64String(base64);
+                    var imageData = ImageDataFactory.Create(imageBytes);
+                    document.Add(new Image(imageData).ScaleToFit(120, 120).SetMarginTop(4));
+                }
+                catch
+                {
+                    // Skip QR image if decoding fails; text info is already rendered above
+                }
+            }
+
+            document.Add(new Paragraph(" ").SetMarginBottom(8));
         }
     }
 
@@ -213,12 +356,20 @@ public class TravelPlanPdfExportService : ITravelPlanPdfExportService
             .SetMarginBottom(4));
     }
 
+    private static Cell BoldCell(string text, PdfFont boldFont) =>
+        new Cell().Add(new Paragraph(text).SetFont(boldFont).SetFontSize(10));
+
+    private static Cell DataCell(string text) =>
+        new Cell().Add(new Paragraph(text).SetFontSize(10));
+
     private static string FormatOptional(string? value, string fallback) =>
         string.IsNullOrWhiteSpace(value) ? fallback : value;
 
     private static string FormatDate(DateTime value) =>
         value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    private static string FormatAmount(double amount) =>
-        amount.ToString("N2", CultureInfo.InvariantCulture);
+    private static string FormatMoney(double amount) =>
+        amount >= 0
+            ? "$" + amount.ToString("N2", CultureInfo.InvariantCulture)
+            : "-$" + Math.Abs(amount).ToString("N2", CultureInfo.InvariantCulture);
 }

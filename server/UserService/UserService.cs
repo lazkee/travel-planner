@@ -58,6 +58,7 @@ internal sealed class UserService : StatelessService
 
                             services.AddSingleton<IJwtTokenService, JwtTokenService>();
                             services.AddScoped<IAuthService, AuthService>();
+                            services.AddScoped<IUserProfileService, UserProfileService>();
                             services.AddScoped<IAdminUserService, AdminUserService>();
                             services.AddScoped<ITravelDataCleanupClient, TravelDataCleanupClient>();
                             services.AddScoped<UserSeeder>();

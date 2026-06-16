@@ -33,6 +33,15 @@ public class AdminUsersController : ControllerBase
         return result.IsSuccess ? Ok(result.Value) : MapError(result.Error!);
     }
 
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> Update(int id, [FromBody] AdminUpdateUserRequestDto request)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var result = await _adminUserService.UpdateAsync(id, request);
+        return result.IsSuccess ? Ok(result.Value) : MapError(result.Error!);
+    }
+
     [HttpPut("{id:int}/role")]
     public async Task<IActionResult> UpdateRole(int id, [FromBody] AdminUpdateUserRoleRequestDto request)
     {

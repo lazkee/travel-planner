@@ -35,6 +35,34 @@ public class AdminUserService : IAdminUserService
         return Result<AdminUserDto>.Success(BuildDto(user));
     }
 
+    public async Task<Result<AdminUserDto>> UpdateAsync(int id, AdminUpdateUserRequestDto request)
+    {
+        var validationError = ValidateNameAndEmail(request.Name, request.Email);
+        if (validationError != null)
+            return Result<AdminUserDto>.Failure(validationError);
+
+        if (request.Role.HasValue && !Enum.IsDefined(typeof(UserRole), request.Role.Value))
+            return Result<AdminUserDto>.Failure(AdminUserErrors.InvalidRole);
+
+        var user = await _context.Users.FindAsync(id);
+        if (user == null)
+            return Result<AdminUserDto>.Failure(AdminUserErrors.NotFound);
+
+        var email = NormalizeEmail(request.Email);
+        var emailExists = await _context.Users.AnyAsync(u => u.Id != id && u.Email == email);
+        if (emailExists)
+            return Result<AdminUserDto>.Failure(AdminUserErrors.EmailAlreadyExists);
+
+        user.Name = request.Name.Trim();
+        user.Email = email;
+        if (request.Role.HasValue)
+            user.Role = request.Role.Value;
+
+        await _context.SaveChangesAsync();
+
+        return Result<AdminUserDto>.Success(BuildDto(user));
+    }
+
     public async Task<Result<AdminUserDto>> UpdateRoleAsync(int id, AdminUpdateUserRoleRequestDto request)
     {
         if (!Enum.IsDefined(typeof(UserRole), request.Role))
@@ -69,6 +97,19 @@ public class AdminUserService : IAdminUserService
         return Result<bool>.Success(true);
     }
 
+    private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
+
+    private static Error? ValidateNameAndEmail(string name, string email)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return AdminUserErrors.EmptyName;
+
+        if (string.IsNullOrWhiteSpace(email))
+            return AdminUserErrors.EmptyEmail;
+
+        return null;
+    }
+
     private static AdminUserDto BuildDto(User user) => new()
     {
         Id = user.Id,
@@ -88,5 +129,14 @@ public class AdminUserService : IAdminUserService
 
         public static readonly Error InvalidRole =
             new("Admin.InvalidRole", "User role is invalid.");
+
+        public static readonly Error EmptyName =
+            new("Admin.EmptyName", "Name is required.");
+
+        public static readonly Error EmptyEmail =
+            new("Admin.EmptyEmail", "Email is required.");
+
+        public static readonly Error EmailAlreadyExists =
+            new("Admin.EmailAlreadyExists", "A user with this email already exists.");
     }
 }

@@ -7,6 +7,7 @@ public interface IAdminUserService
 {
     Task<Result<List<AdminUserDto>>> GetAllAsync();
     Task<Result<AdminUserDto>> GetByIdAsync(int id);
+    Task<Result<AdminUserDto>> UpdateAsync(int id, AdminUpdateUserRequestDto request);
     Task<Result<AdminUserDto>> UpdateRoleAsync(int id, AdminUpdateUserRoleRequestDto request);
     Task<Result<bool>> DeleteAsync(int currentAdminUserId, int id);
 }

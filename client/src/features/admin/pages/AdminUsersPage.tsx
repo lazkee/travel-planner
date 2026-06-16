@@ -1,22 +1,36 @@
 import { useCallback, useEffect, useState } from 'react'
+import type * as React from 'react'
 import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import Card from '../../../components/ui/Card'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import EmptyState from '../../../components/ui/EmptyState'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
+import Input from '../../../components/ui/Input'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
+import Modal from '../../../components/ui/Modal'
 import Select from '../../../components/ui/Select'
 import { useAuth } from '../../../context/AuthContext'
 import { useToast } from '../../../context/ToastContext'
 import {
   deleteAdminUser,
   getAdminUsers,
+  updateAdminUser,
   updateAdminUserRole,
 } from '../api/adminUsers.api'
 import type { AdminUserDto, AdminUserRole } from '../types/adminUser.types'
 
 const roleOptions: AdminUserRole[] = ['User', 'Admin']
+
+type AdminUserEditFormData = {
+  name: string
+  email: string
+}
+
+const emptyEditFormData: AdminUserEditFormData = {
+  name: '',
+  email: '',
+}
 
 const dateFormatter = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium',
@@ -29,12 +43,21 @@ function formatDate(value: string) {
   return Number.isNaN(date.getTime()) ? 'Not set' : dateFormatter.format(date)
 }
 
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
 function AdminUsersPage() {
   const { user: currentUser } = useAuth()
   const { showError, showSuccess } = useToast()
   const [users, setUsers] = useState<AdminUserDto[]>([])
+  const [editError, setEditError] = useState('')
+  const [editFormData, setEditFormData] =
+    useState<AdminUserEditFormData>(emptyEditFormData)
+  const [editingUser, setEditingUser] = useState<AdminUserDto | null>(null)
   const [error, setError] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [deletingUser, setDeletingUser] = useState<AdminUserDto | null>(null)
   const [updatingUserId, setUpdatingUserId] = useState<number | null>(null)
@@ -80,6 +103,93 @@ function AdminUsersPage() {
       showError(getApiErrorMessage(requestError))
     } finally {
       setUpdatingUserId(null)
+    }
+  }
+
+  function openEditDialog(user: AdminUserDto) {
+    if (user.id === currentUser?.id) {
+      return
+    }
+
+    setEditingUser(user)
+    setEditFormData({
+      name: user.name,
+      email: user.email,
+    })
+    setEditError('')
+  }
+
+  function closeEditDialog() {
+    if (isEditing) {
+      return
+    }
+
+    setEditingUser(null)
+    setEditError('')
+  }
+
+  function handleEditChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = event.target
+
+    setEditFormData((previousFormData) => ({
+      ...previousFormData,
+      [name]: value,
+    }))
+  }
+
+  function validateEditForm() {
+    if (!editFormData.name.trim()) {
+      return 'Name is required.'
+    }
+
+    if (!editFormData.email.trim()) {
+      return 'Email is required.'
+    }
+
+    if (!isValidEmail(editFormData.email.trim())) {
+      return 'Enter a valid email address.'
+    }
+
+    return ''
+  }
+
+  async function handleEditSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!editingUser || editingUser.id === currentUser?.id) {
+      setEditingUser(null)
+      return
+    }
+
+    const validationError = validateEditForm()
+
+    if (validationError) {
+      setEditError(validationError)
+      showError(validationError)
+      return
+    }
+
+    setEditError('')
+    setIsEditing(true)
+
+    try {
+      const updatedUser = await updateAdminUser(editingUser.id, {
+        name: editFormData.name.trim(),
+        email: editFormData.email.trim(),
+      })
+      setUsers((previousUsers) =>
+        previousUsers
+          .map((user) => (user.id === updatedUser.id ? updatedUser : user))
+          .filter((user) => user.id !== currentUser?.id),
+      )
+      setEditingUser(null)
+      showSuccess('User updated.')
+    } catch (requestError) {
+      const message = getApiErrorMessage(requestError)
+      setEditError(message)
+      showError(message)
+    } finally {
+      setIsEditing(false)
     }
   }
 
@@ -198,13 +308,22 @@ function AdminUsersPage() {
                         {formatDate(user.createdAt)}
                       </td>
                       <td className="px-4 py-4">
-                        <Button
-                          disabled={isDeleting}
-                          onClick={() => setDeletingUser(user)}
-                          variant="danger"
-                        >
-                          Delete
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            disabled={isDeleting || isEditing || isUpdatingUser}
+                            onClick={() => openEditDialog(user)}
+                            variant="secondary"
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            disabled={isDeleting || isEditing}
+                            onClick={() => setDeletingUser(user)}
+                            variant="danger"
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -236,6 +355,52 @@ function AdminUsersPage() {
         onConfirm={handleConfirmDelete}
         title="Delete user"
       />
+
+      <Modal
+        isOpen={Boolean(editingUser)}
+        onClose={closeEditDialog}
+        title="Edit user"
+      >
+        <form className="grid gap-4" onSubmit={handleEditSubmit}>
+          {editError ? <ErrorAlert message={editError} /> : null}
+
+          <Input
+            autoComplete="name"
+            disabled={isEditing}
+            label="Name"
+            maxLength={200}
+            name="name"
+            onChange={handleEditChange}
+            required
+            value={editFormData.name}
+          />
+
+          <Input
+            autoComplete="email"
+            disabled={isEditing}
+            label="Email"
+            maxLength={320}
+            name="email"
+            onChange={handleEditChange}
+            required
+            type="email"
+            value={editFormData.email}
+          />
+
+          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+            <Button
+              disabled={isEditing}
+              onClick={closeEditDialog}
+              variant="secondary"
+            >
+              Cancel
+            </Button>
+            <Button isLoading={isEditing} type="submit" variant="primary">
+              Save changes
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </section>
   )
 }

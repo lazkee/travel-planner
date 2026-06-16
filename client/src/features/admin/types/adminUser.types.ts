@@ -11,3 +11,8 @@ export interface AdminUserDto {
 export interface AdminUpdateUserRoleRequestDto {
   role: AdminUserRole
 }
+
+export interface AdminUpdateUserRequestDto {
+  name: string
+  email: string
+}

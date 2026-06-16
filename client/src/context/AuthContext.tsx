@@ -31,6 +31,7 @@ type AuthContextValue = {
   login: (request: LoginRequest) => Promise<void>
   register: (request: RegisterRequest) => Promise<void>
   logout: () => void
+  updateCurrentUser: (user: AuthUser) => void
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -136,6 +137,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persistAuth(null)
   }, [persistAuth])
 
+  const updateCurrentUser = useCallback((user: AuthUser) => {
+    setAuth((previousAuth) => {
+      if (!previousAuth.token) {
+        return previousAuth
+      }
+
+      window.localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user))
+
+      return {
+        ...previousAuth,
+        user,
+      }
+    })
+  }, [])
+
   useEffect(() => {
     function handleAuthLogout() {
       logout()
@@ -179,8 +195,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      updateCurrentUser,
     }),
-    [auth, login, logout, register],
+    [auth, login, logout, register, updateCurrentUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

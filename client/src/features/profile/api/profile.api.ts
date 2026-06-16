@@ -1,10 +1,9 @@
 import userServiceClient from '../../../api/userServiceClient'
+import type { UserRole } from '../../auth/types/auth.types'
 import type {
-  AdminUpdateUserRequestDto,
-  AdminUpdateUserRoleRequestDto,
-  AdminUserDto,
-  AdminUserRole,
-} from '../types/adminUser.types'
+  UpdateUserProfileRequestDto,
+  UserProfileDto,
+} from '../types/profile.types'
 
 type UnknownRecord = Record<string, unknown>
 
@@ -38,11 +37,11 @@ function getString(source: UnknownRecord, keys: string[]) {
   return typeof value === 'string' ? value : ''
 }
 
-function normalizeRole(value: string): AdminUserRole {
+function normalizeRole(value: string): UserRole {
   return value === 'Admin' ? 'Admin' : 'User'
 }
 
-function normalizeAdminUser(data: unknown): AdminUserDto {
+function normalizeUserProfile(data: unknown): UserProfileDto {
   const source = isRecord(data) ? data : {}
 
   return {
@@ -54,35 +53,20 @@ function normalizeAdminUser(data: unknown): AdminUserDto {
   }
 }
 
-export async function getAdminUsers(): Promise<AdminUserDto[]> {
-  const response = await userServiceClient.get('/api/admin/users')
-  const users = Array.isArray(response.data) ? response.data : []
+export async function getCurrentUserProfile(): Promise<UserProfileDto> {
+  const response = await userServiceClient.get('/api/users/me')
 
-  return users.map(normalizeAdminUser)
+  return normalizeUserProfile(response.data)
 }
 
-export async function updateAdminUserRole(
-  id: number,
-  role: AdminUserRole,
-): Promise<AdminUserDto> {
-  const request: AdminUpdateUserRoleRequestDto = { role }
-  const response = await userServiceClient.put(
-    `/api/admin/users/${id}/role`,
-    request,
-  )
+export async function updateCurrentUserProfile(
+  request: UpdateUserProfileRequestDto,
+): Promise<UserProfileDto> {
+  const response = await userServiceClient.put('/api/users/me', request)
 
-  return normalizeAdminUser(response.data)
+  return normalizeUserProfile(response.data)
 }
 
-export async function updateAdminUser(
-  id: number,
-  request: AdminUpdateUserRequestDto,
-): Promise<AdminUserDto> {
-  const response = await userServiceClient.put(`/api/admin/users/${id}`, request)
-
-  return normalizeAdminUser(response.data)
-}
-
-export async function deleteAdminUser(id: number): Promise<void> {
-  await userServiceClient.delete(`/api/admin/users/${id}`)
+export async function deleteCurrentUserProfile(): Promise<void> {
+  await userServiceClient.delete('/api/users/me')
 }

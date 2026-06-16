@@ -24,6 +24,7 @@ function Sidebar({ variant = 'authenticated' }: SidebarProps) {
     location.pathname.startsWith('/shared') ||
     location.pathname === '/app/shared' ||
     location.pathname.startsWith('/app/shared')
+  const isProfileActive = !isGuest && location.pathname === '/app/profile'
   const isUserPlansActive =
     location.pathname === '/app/admin/user-plans' ||
     location.pathname.startsWith('/app/admin/user-plans/')
@@ -61,6 +62,18 @@ function Sidebar({ variant = 'authenticated' }: SidebarProps) {
         >
           Shared
         </NavLink>
+        {!isGuest ? (
+          <NavLink
+            className={() =>
+              isProfileActive
+                ? `${linkClassName} bg-white/[0.12]`
+                : linkClassName
+            }
+            to="/app/profile"
+          >
+            Profile
+          </NavLink>
+        ) : null}
         {!isGuest && isAdmin ? (
           <>
             <NavLink

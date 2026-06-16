@@ -6,6 +6,7 @@ import AdminUsersPage from '../features/admin/pages/AdminUsersPage'
 import AdminUserPlansPage from '../features/admin/pages/AdminUserPlansPage'
 import LoginPage from '../features/auth/pages/LoginPage'
 import RegisterPage from '../features/auth/pages/RegisterPage'
+import ProfilePage from '../features/profile/pages/ProfilePage'
 import SharedLinksPage from '../features/sharing/pages/SharedLinksPage'
 import SharedTripPage from '../features/sharing/pages/SharedTripPage'
 import MyTripsPage from '../features/trips/pages/MyTripsPage'
@@ -65,6 +66,7 @@ function AppRoutes() {
           <Route index element={<Navigate to="/app/trips" replace />} />
           <Route path="trips" element={<MyTripsPage />} />
           <Route path="trips/:planId" element={<TripDetailsPage />} />
+          <Route path="profile" element={<ProfilePage />} />
           <Route path="shared" element={<SharedLinksPage />} />
           <Route path="shared/:token" element={<SharedTripPage />} />
           <Route element={<AdminRoute />}>

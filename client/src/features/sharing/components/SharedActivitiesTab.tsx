@@ -18,6 +18,8 @@ import {
 
 type SharedActivitiesTabProps = {
   activities: ActivityDto[]
+  planEndDate?: string
+  planStartDate?: string
   readonly: boolean
   token: string
   onChanged: () => Promise<void>
@@ -26,6 +28,8 @@ type SharedActivitiesTabProps = {
 function SharedActivitiesTab({
   activities,
   onChanged,
+  planEndDate,
+  planStartDate,
   readonly,
   token,
 }: SharedActivitiesTabProps) {
@@ -137,6 +141,8 @@ function SharedActivitiesTab({
         mode={editingActivity ? 'edit' : 'create'}
         onClose={handleCloseFormModal}
         onSubmit={handleSaveActivity}
+        planEndDate={planEndDate}
+        planStartDate={planStartDate}
       />
 
       <ConfirmDialog

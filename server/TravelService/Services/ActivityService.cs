@@ -52,6 +52,13 @@ public class ActivityService : IActivityService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<ActivityDto>.Failure(planError);
 
+        var plan = await _context.TravelPlans.FindAsync(planId);
+        if (plan == null)
+            return Result<ActivityDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
+        if (!IsActivityDateInsideTravelPlan(request.Date, plan))
+            return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.DateOutsideTravelPlan);
+
         if (request.EstimatedCost < 0)
             return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.InvalidEstimatedCost);
 
@@ -74,6 +81,13 @@ public class ActivityService : IActivityService
 
         if (activity == null)
             return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.NotFound);
+
+        var plan = await _context.TravelPlans.FindAsync(planId);
+        if (plan == null)
+            return Result<ActivityDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
+        if (!IsActivityDateInsideTravelPlan(request.Date, plan))
+            return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.DateOutsideTravelPlan);
 
         if (request.EstimatedCost < 0)
             return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.InvalidEstimatedCost);
@@ -100,4 +114,7 @@ public class ActivityService : IActivityService
 
         return Result<bool>.Success(true);
     }
+
+    private static bool IsActivityDateInsideTravelPlan(DateTime activityDate, TravelPlan plan) =>
+        activityDate.Date >= plan.StartDate.Date && activityDate.Date <= plan.EndDate.Date;
 }

@@ -155,6 +155,7 @@ function DestinationFormModal({
           autoComplete="off"
           disabled={isSubmitting}
           label="Destination name"
+          maxLength={200}
           name="name"
           onChange={handleChange}
           required
@@ -165,6 +166,7 @@ function DestinationFormModal({
           autoComplete="off"
           disabled={isSubmitting}
           label="Location"
+          maxLength={300}
           name="location"
           onChange={handleChange}
           required
@@ -193,6 +195,7 @@ function DestinationFormModal({
         <Textarea
           disabled={isSubmitting}
           label="Description"
+          maxLength={1000}
           name="description"
           onChange={handleChange}
           placeholder="Optional notes about this destination"

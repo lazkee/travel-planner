@@ -59,8 +59,8 @@ public class TravelPlanService : ITravelPlanService
 
     public async Task<Result<TravelPlanDto>> CreateAsync(int userId, TravelPlanRequestDto request)
     {
-        if (request.EndDate < request.StartDate)
-            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.InvalidDateRange);
+        var dateError = ValidateDatesForCreate(request);
+        if (dateError != null) return Result<TravelPlanDto>.Failure(dateError);
 
         if (request.Budget < 0)
             return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.InvalidBudget);
@@ -80,11 +80,14 @@ public class TravelPlanService : ITravelPlanService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<TravelPlanDto>.Failure(planError);
 
-        if (request.EndDate < request.StartDate)
-            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.InvalidDateRange);
+        var dateError = ValidateDatesForUpdate(request);
+        if (dateError != null) return Result<TravelPlanDto>.Failure(dateError);
 
         if (request.Budget < 0)
             return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.InvalidBudget);
+
+        if (await HasActivitiesOutsideDateRange(planId, request.StartDate, request.EndDate))
+            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.DateRangeExcludesActivities);
 
         var plan = await _context.TravelPlans.FindAsync(planId);
 
@@ -149,4 +152,32 @@ public class TravelPlanService : ITravelPlanService
         });
     }
 
+    private static Error? ValidateDatesForCreate(TravelPlanRequestDto request)
+    {
+        if (request.StartDate.Date < DateTime.UtcNow.Date)
+            return TravelServiceErrors.TravelPlanErrors.StartDateInPast;
+
+        if (request.EndDate.Date < request.StartDate.Date)
+            return TravelServiceErrors.TravelPlanErrors.InvalidDateRange;
+
+        return null;
+    }
+
+    private static Error? ValidateDatesForUpdate(TravelPlanRequestDto request)
+    {
+        if (request.EndDate.Date < request.StartDate.Date)
+            return TravelServiceErrors.TravelPlanErrors.InvalidDateRange;
+
+        return null;
+    }
+
+    private async Task<bool> HasActivitiesOutsideDateRange(int planId, DateTime startDate, DateTime endDate)
+    {
+        var start = startDate.Date;
+        var endExclusive = endDate.Date.AddDays(1);
+
+        return await _context.Activities
+            .AnyAsync(a => a.TravelPlanId == planId &&
+                           (a.Date < start || a.Date >= endExclusive));
+    }
 }

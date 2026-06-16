@@ -185,6 +185,8 @@ function SharedTripDetailsView({
           <SharedActivitiesTab
             activities={sharedPlan.activities}
             onChanged={onReload}
+            planEndDate={sharedPlan.endDate}
+            planStartDate={sharedPlan.startDate}
             readonly={readonly}
             token={token}
           />
@@ -194,6 +196,8 @@ function SharedTripDetailsView({
             activities={sharedPlan.activities}
             expenses={sharedPlan.expenses}
             onChanged={onReload}
+            planEndDate={sharedPlan.endDate}
+            planStartDate={sharedPlan.startDate}
             readonly={readonly}
             token={token}
           />

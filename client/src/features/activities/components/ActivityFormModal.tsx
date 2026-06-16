@@ -19,6 +19,8 @@ type ActivityFormModalProps = {
   mode: 'create' | 'edit'
   onClose: () => void
   onSubmit: (request: ActivityRequestDto) => Promise<void>
+  planEndDate?: string
+  planStartDate?: string
 }
 
 type ActivityFormData = {
@@ -177,9 +179,13 @@ function ActivityFormModal({
   mode,
   onClose,
   onSubmit,
+  planEndDate,
+  planStartDate,
 }: ActivityFormModalProps) {
   const [state, dispatch] = useReducer(activityFormReducer, initialFormState)
   const { error, formData, isSubmitting } = state
+  const planStartDateValue = toDateInputValue(planStartDate ?? '')
+  const planEndDateValue = toDateInputValue(planEndDate ?? '')
 
   useEffect(() => {
     if (!isOpen) {
@@ -224,6 +230,13 @@ function ActivityFormModal({
 
     if (!formData.date) {
       return 'Date is required.'
+    }
+
+    if (
+      (planStartDateValue && formData.date < planStartDateValue) ||
+      (planEndDateValue && formData.date > planEndDateValue)
+    ) {
+      return 'Activity date must be within the travel plan date range.'
     }
 
     if (!formData.status) {
@@ -290,6 +303,7 @@ function ActivityFormModal({
           autoComplete="off"
           disabled={isSubmitting}
           label="Activity name"
+          maxLength={200}
           name="name"
           onChange={handleChange}
           required
@@ -300,6 +314,8 @@ function ActivityFormModal({
           <DateInput
             disabled={isSubmitting}
             label="Date"
+            max={planEndDateValue || undefined}
+            min={planStartDateValue || undefined}
             name="date"
             onChange={handleChange}
             required
@@ -319,6 +335,7 @@ function ActivityFormModal({
           autoComplete="off"
           disabled={isSubmitting}
           label="Location"
+          maxLength={300}
           name="location"
           onChange={handleChange}
           value={formData.location}
@@ -363,6 +380,7 @@ function ActivityFormModal({
         <Textarea
           disabled={isSubmitting}
           label="Description"
+          maxLength={1000}
           name="description"
           onChange={handleChange}
           placeholder="Optional notes about this activity"

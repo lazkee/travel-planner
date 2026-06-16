@@ -167,6 +167,7 @@ function ExpenseFormModal({
           autoComplete="off"
           disabled={isSubmitting}
           label="Expense name"
+          maxLength={200}
           name="name"
           onChange={handleChange}
           required
@@ -223,6 +224,7 @@ function ExpenseFormModal({
         <Textarea
           disabled={isSubmitting}
           label="Description"
+          maxLength={1000}
           name="description"
           onChange={handleChange}
           placeholder="Optional notes about this expense"

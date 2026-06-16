@@ -27,13 +27,18 @@ public class SharedEditService : ISharedEditService
         if (tokenResult.IsFailure)
             return Result<TravelPlanDto>.Failure(tokenResult.Error!);
 
-        if (request.EndDate < request.StartDate)
-            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.InvalidDateRange);
+        var dateError = ValidateDatesForUpdate(request);
+        if (dateError != null) return Result<TravelPlanDto>.Failure(dateError);
 
         if (request.Budget < 0)
             return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.InvalidBudget);
 
-        var plan = await _context.TravelPlans.FindAsync(tokenResult.Value!.TravelPlanId);
+        var planId = tokenResult.Value!.TravelPlanId;
+
+        if (await HasActivitiesOutsideDateRange(planId, request.StartDate, request.EndDate))
+            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.DateRangeExcludesActivities);
+
+        var plan = await _context.TravelPlans.FindAsync(planId);
         if (plan == null)
             return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
 
@@ -114,6 +119,13 @@ public class SharedEditService : ISharedEditService
 
         var planId = tokenResult.Value!.TravelPlanId;
 
+        var plan = await _context.TravelPlans.FindAsync(planId);
+        if (plan == null)
+            return Result<ActivityDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
+        if (!IsActivityDateInsideTravelPlan(request.Date, plan))
+            return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.DateOutsideTravelPlan);
+
         if (request.EstimatedCost < 0)
             return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.InvalidEstimatedCost);
 
@@ -139,6 +151,13 @@ public class SharedEditService : ISharedEditService
 
         if (activity == null)
             return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.NotFound);
+
+        var plan = await _context.TravelPlans.FindAsync(planId);
+        if (plan == null)
+            return Result<ActivityDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
+        if (!IsActivityDateInsideTravelPlan(request.Date, plan))
+            return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.DateOutsideTravelPlan);
 
         if (request.EstimatedCost < 0)
             return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.InvalidEstimatedCost);
@@ -294,4 +313,25 @@ public class SharedEditService : ISharedEditService
 
         return Result<bool>.Success(true);
     }
+
+    private static Error? ValidateDatesForUpdate(TravelPlanRequestDto request)
+    {
+        if (request.EndDate.Date < request.StartDate.Date)
+            return TravelServiceErrors.TravelPlanErrors.InvalidDateRange;
+
+        return null;
+    }
+
+    private async Task<bool> HasActivitiesOutsideDateRange(int planId, DateTime startDate, DateTime endDate)
+    {
+        var start = startDate.Date;
+        var end = endDate.Date;
+
+        return await _context.Activities
+            .AnyAsync(a => a.TravelPlanId == planId &&
+                           (a.Date.Date < start || a.Date.Date > end));
+    }
+
+    private static bool IsActivityDateInsideTravelPlan(DateTime activityDate, TravelPlan plan) =>
+        activityDate.Date >= plan.StartDate.Date && activityDate.Date <= plan.EndDate.Date;
 }

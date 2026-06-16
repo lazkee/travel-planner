@@ -15,6 +15,12 @@ public static class TravelServiceErrors
         public static readonly Error InvalidDateRange =
             new("TravelPlan.InvalidDateRange", "End date cannot be before start date.");
 
+        public static readonly Error StartDateInPast =
+            new("TravelPlan.StartDateInPast", "Travel plan start date cannot be in the past.");
+
+        public static readonly Error DateRangeExcludesActivities =
+            new("TravelPlan.DateRangeExcludesActivities", "Travel plan date range must include all existing activities.");
+
         public static readonly Error InvalidBudget =
             new("TravelPlan.InvalidBudget", "Budget cannot be negative.");
     }
@@ -35,6 +41,9 @@ public static class TravelServiceErrors
 
         public static readonly Error InvalidEstimatedCost =
             new("Activity.InvalidEstimatedCost", "Estimated cost cannot be negative.");
+
+        public static readonly Error DateOutsideTravelPlan =
+            new("Activity.DateOutsideTravelPlan", "Activity date must be within the travel plan date range.");
     }
 
     public static class ExpenseErrors

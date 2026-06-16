@@ -252,14 +252,18 @@ function TripDetailsPage() {
           {activeTab === 'activities' ? (
             <ActivitiesTab
               onActivitiesChanged={refreshTripDetails}
+              planEndDate={plan.endDate}
               planId={plan.id}
+              planStartDate={plan.startDate}
             />
           ) : null}
           {activeTab === 'expenses' ? (
             <ExpensesTab
               budgetSummary={budgetSummary}
               onExpensesChanged={refreshTripDetails}
+              planEndDate={plan.endDate}
               planId={plan.id}
+              planStartDate={plan.startDate}
             />
           ) : null}
           {activeTab === 'checklist' ? <ChecklistTab planId={plan.id} /> : null}

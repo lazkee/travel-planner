@@ -19,7 +19,9 @@ import ActivityList from './ActivityList'
 
 type ActivitiesTabProps = {
   onActivitiesChanged?: () => void | Promise<void>
+  planEndDate?: string
   planId: number
+  planStartDate?: string
   readonly?: boolean
 }
 
@@ -27,7 +29,9 @@ type ActivityViewMode = 'list' | 'calendar'
 
 function ActivitiesTab({
   onActivitiesChanged,
+  planEndDate,
   planId,
+  planStartDate,
   readonly = false,
 }: ActivitiesTabProps) {
   const { showError, showSuccess } = useToast()
@@ -214,6 +218,8 @@ function ActivitiesTab({
         mode={editingActivity ? 'edit' : 'create'}
         onClose={handleCloseFormModal}
         onSubmit={handleSaveActivity}
+        planEndDate={planEndDate}
+        planStartDate={planStartDate}
       />
 
       <ConfirmDialog

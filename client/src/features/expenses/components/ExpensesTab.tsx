@@ -37,6 +37,8 @@ import ExpenseTable from './ExpenseTable'
 type ExpensesTabProps = {
   budgetSummary: BudgetSummaryDto | null
   planId: number
+  planEndDate?: string
+  planStartDate?: string
   readonly?: boolean
   onExpensesChanged?: () => void | Promise<void>
 }
@@ -99,7 +101,9 @@ function getUsedBudget(
 function ExpensesTab({
   budgetSummary,
   onExpensesChanged,
+  planEndDate,
   planId,
+  planStartDate,
   readonly = false,
 }: ExpensesTabProps) {
   const { showError, showSuccess } = useToast()
@@ -338,6 +342,8 @@ function ExpensesTab({
         mode="edit"
         onClose={handleCloseActivityFormModal}
         onSubmit={handleSaveActivity}
+        planEndDate={planEndDate}
+        planStartDate={planStartDate}
       />
 
       <ConfirmDialog

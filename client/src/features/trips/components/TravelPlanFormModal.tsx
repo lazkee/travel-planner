@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type * as React from 'react'
+import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import DateInput from '../../../components/ui/DateInput'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
@@ -41,6 +42,15 @@ function toDateInputValue(value: string) {
   return value ? value.slice(0, 10) : ''
 }
 
+function getTodayDateInputValue() {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
 function toOptionalString(value: string) {
   const trimmedValue = value.trim()
 
@@ -56,7 +66,9 @@ function TravelPlanFormModal({
 }: TravelPlanFormModalProps) {
   const [formData, setFormData] = useState<TravelPlanFormData>(emptyFormData)
   const [error, setError] = useState('')
+  const [dateRangeError, setDateRangeError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const today = getTodayDateInputValue()
 
   useEffect(() => {
     if (!isOpen) {
@@ -77,6 +89,7 @@ function TravelPlanFormModal({
     }
 
     setError('')
+    setDateRangeError('')
     setIsSubmitting(false)
   }, [initialPlan, isOpen])
 
@@ -84,6 +97,10 @@ function TravelPlanFormModal({
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = event.target
+
+    if ((name === 'startDate' || name === 'endDate') && dateRangeError) {
+      setDateRangeError('')
+    }
 
     setFormData((previous) => ({
       ...previous,
@@ -98,6 +115,10 @@ function TravelPlanFormModal({
 
     if (!formData.startDate) {
       return 'Start date is required.'
+    }
+
+    if (mode === 'create' && formData.startDate < today) {
+      return 'Start date cannot be in the past.'
     }
 
     if (!formData.endDate) {
@@ -132,6 +153,7 @@ function TravelPlanFormModal({
     }
 
     setError('')
+    setDateRangeError('')
     setIsSubmitting(true)
 
     const budget = formData.budget === '' ? 0 : Number(formData.budget)
@@ -146,8 +168,11 @@ function TravelPlanFormModal({
         notes: toOptionalString(formData.notes),
       })
       onClose()
-    } catch {
-      // Operation errors are shown through toast notifications by the parent.
+    } catch (submitError) {
+      const message = getApiErrorMessage(submitError)
+      if (message.includes('date range must include all existing activities')) {
+        setDateRangeError(message)
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -166,6 +191,7 @@ function TravelPlanFormModal({
           autoComplete="off"
           disabled={isSubmitting}
           label="Trip name"
+          maxLength={200}
           name="name"
           onChange={handleChange}
           required
@@ -175,6 +201,7 @@ function TravelPlanFormModal({
         <Textarea
           disabled={isSubmitting}
           label="Description"
+          maxLength={1000}
           name="description"
           onChange={handleChange}
           placeholder="Short overview of this trip"
@@ -185,6 +212,7 @@ function TravelPlanFormModal({
           <DateInput
             disabled={isSubmitting}
             label="Start date"
+            min={mode === 'create' ? today : undefined}
             name="startDate"
             onChange={handleChange}
             required
@@ -193,12 +221,15 @@ function TravelPlanFormModal({
           <DateInput
             disabled={isSubmitting}
             label="End date"
+            min={formData.startDate || today}
             name="endDate"
             onChange={handleChange}
             required
             value={formData.endDate}
           />
         </div>
+
+        {dateRangeError ? <ErrorAlert message={dateRangeError} /> : null}
 
         <Input
           disabled={isSubmitting}
@@ -214,6 +245,7 @@ function TravelPlanFormModal({
         <Textarea
           disabled={isSubmitting}
           label="Notes"
+          maxLength={2000}
           name="notes"
           onChange={handleChange}
           placeholder="Important reminders, links, or ideas"

@@ -2,10 +2,11 @@ import { useState } from 'react'
 import type * as React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getApiErrorMessage } from '../../../api/apiError'
+import Button from '../../../components/ui/Button'
+import ErrorAlert from '../../../components/ui/ErrorAlert'
+import Input from '../../../components/ui/Input'
 import { useAuth } from '../../../context/AuthContext'
 
-const inputClassName =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-[11px] text-slate-900 outline-none focus:border-blue-600 focus:ring-[3px] focus:ring-blue-600/15 disabled:bg-slate-50'
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function RegisterPage() {
@@ -95,102 +96,60 @@ function RegisterPage() {
       </header>
 
       <form className="grid gap-[18px]" onSubmit={handleSubmit}>
-        {error ? (
-          <div
-            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-            role="alert"
-          >
-            {error}
-          </div>
-        ) : null}
+        {error ? <ErrorAlert message={error} /> : null}
 
-        <div className="grid gap-2">
-          <label
-            className="text-[0.92rem] font-bold text-slate-900"
-            htmlFor="register-name"
-          >
-            Name
-          </label>
-          <input
-            className={inputClassName}
-            id="register-name"
-            name="name"
-            type="text"
-            autoComplete="name"
-            value={formData.name}
-            onChange={handleChange}
-            disabled={isSubmitting}
-            required
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <label
-            className="text-[0.92rem] font-bold text-slate-900"
-            htmlFor="register-email"
-          >
-            Email
-          </label>
-          <input
-            className={inputClassName}
-            id="register-email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            value={formData.email}
-            onChange={handleChange}
-            disabled={isSubmitting}
-            required
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <label
-            className="text-[0.92rem] font-bold text-slate-900"
-            htmlFor="register-password"
-          >
-            Password
-          </label>
-          <input
-            className={inputClassName}
-            id="register-password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            value={formData.password}
-            onChange={handleChange}
-            disabled={isSubmitting}
-            required
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <label
-            className="text-[0.92rem] font-bold text-slate-900"
-            htmlFor="register-confirm-password"
-          >
-            Confirm password
-          </label>
-          <input
-            className={inputClassName}
-            id="register-confirm-password"
-            name="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            disabled={isSubmitting}
-            required
-          />
-        </div>
-
-        <button
-          className="inline-flex w-full items-center justify-center rounded-lg border-0 bg-blue-600 px-4 py-3 font-extrabold text-white transition hover:bg-blue-700 disabled:hover:bg-blue-600"
+        <Input
+          autoComplete="name"
           disabled={isSubmitting}
+          label="Name"
+          name="name"
+          onChange={handleChange}
+          required
+          type="text"
+          value={formData.name}
+        />
+
+        <Input
+          autoComplete="email"
+          disabled={isSubmitting}
+          label="Email"
+          name="email"
+          onChange={handleChange}
+          required
+          type="email"
+          value={formData.email}
+        />
+
+        <Input
+          autoComplete="new-password"
+          disabled={isSubmitting}
+          label="Password"
+          name="password"
+          onChange={handleChange}
+          required
+          type="password"
+          value={formData.password}
+        />
+
+        <Input
+          autoComplete="new-password"
+          disabled={isSubmitting}
+          label="Confirm password"
+          name="confirmPassword"
+          onChange={handleChange}
+          required
+          type="password"
+          value={formData.confirmPassword}
+        />
+
+        <Button
+          className="w-full"
+          isLoading={isSubmitting}
           type="submit"
+          variant="primary"
         >
-          {isSubmitting ? 'Creating account...' : 'Create account'}
-        </button>
+          Create account
+        </Button>
       </form>
 
       <p className="mt-[22px] text-center text-slate-500">

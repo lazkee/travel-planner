@@ -2,14 +2,14 @@ import { useState } from 'react'
 import type * as React from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getApiErrorMessage } from '../../../api/apiError'
+import Button from '../../../components/ui/Button'
+import ErrorAlert from '../../../components/ui/ErrorAlert'
+import Input from '../../../components/ui/Input'
 import { useAuth } from '../../../context/AuthContext'
 
 type LocationState = {
   from?: string
 }
-
-const inputClassName =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-[11px] text-slate-900 outline-none focus:border-blue-600 focus:ring-[3px] focus:ring-blue-600/15 disabled:bg-slate-50'
 
 function LoginPage() {
   const { login } = useAuth()
@@ -80,62 +80,38 @@ function LoginPage() {
       </header>
 
       <form className="grid gap-[18px]" onSubmit={handleSubmit}>
-        {error ? (
-          <div
-            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
-            role="alert"
-          >
-            {error}
-          </div>
-        ) : null}
+        {error ? <ErrorAlert message={error} /> : null}
 
-        <div className="grid gap-2">
-          <label
-            className="text-[0.92rem] font-bold text-slate-900"
-            htmlFor="login-email"
-          >
-            Email
-          </label>
-          <input
-            className={inputClassName}
-            id="login-email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            value={formData.email}
-            onChange={handleChange}
-            disabled={isSubmitting}
-            required
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <label
-            className="text-[0.92rem] font-bold text-slate-900"
-            htmlFor="login-password"
-          >
-            Password
-          </label>
-          <input
-            className={inputClassName}
-            id="login-password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            value={formData.password}
-            onChange={handleChange}
-            disabled={isSubmitting}
-            required
-          />
-        </div>
-
-        <button
-          className="inline-flex w-full items-center justify-center rounded-lg border-0 bg-blue-600 px-4 py-3 font-extrabold text-white transition hover:bg-blue-700 disabled:hover:bg-blue-600"
+        <Input
+          autoComplete="email"
           disabled={isSubmitting}
+          label="Email"
+          name="email"
+          onChange={handleChange}
+          required
+          type="email"
+          value={formData.email}
+        />
+
+        <Input
+          autoComplete="current-password"
+          disabled={isSubmitting}
+          label="Password"
+          name="password"
+          onChange={handleChange}
+          required
+          type="password"
+          value={formData.password}
+        />
+
+        <Button
+          className="w-full"
+          isLoading={isSubmitting}
           type="submit"
+          variant="primary"
         >
-          {isSubmitting ? 'Logging in...' : 'Log in'}
-        </button>
+          Log in
+        </Button>
       </form>
 
       <p className="mt-[22px] text-center text-slate-500">

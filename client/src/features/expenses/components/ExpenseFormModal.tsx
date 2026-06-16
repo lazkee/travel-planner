@@ -5,6 +5,7 @@ import DateInput from '../../../components/ui/DateInput'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import Input from '../../../components/ui/Input'
 import Modal from '../../../components/ui/Modal'
+import Select from '../../../components/ui/Select'
 import Textarea from '../../../components/ui/Textarea'
 import {
   expenseCategories,
@@ -36,9 +37,6 @@ const emptyFormData: ExpenseFormData = {
   date: '',
   description: '',
 }
-
-const selectClassName =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-[11px] text-slate-900 outline-none focus:border-blue-600 focus:ring-[3px] focus:ring-blue-600/15 disabled:bg-slate-50'
 
 function toDateInputValue(value: string) {
   return value ? value.slice(0, 10) : ''
@@ -175,29 +173,21 @@ function ExpenseFormModal({
         />
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="grid gap-2">
-            <label
-              className="text-[0.92rem] font-bold text-slate-900"
-              htmlFor="expense-category"
-            >
-              Category
-            </label>
-            <select
-              className={selectClassName}
-              disabled={isSubmitting}
-              id="expense-category"
-              name="category"
-              onChange={handleChange}
-              required
-              value={formData.category}
-            >
-              {expenseCategories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            disabled={isSubmitting}
+            id="expense-category"
+            label="Category"
+            name="category"
+            onChange={handleChange}
+            required
+            value={formData.category}
+          >
+            {expenseCategories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </Select>
 
           <Input
             disabled={isSubmitting}

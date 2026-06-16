@@ -5,6 +5,7 @@ import DateInput from '../../../components/ui/DateInput'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import Input from '../../../components/ui/Input'
 import Modal from '../../../components/ui/Modal'
+import Select from '../../../components/ui/Select'
 import Textarea from '../../../components/ui/Textarea'
 import {
   activityStatuses,
@@ -74,9 +75,6 @@ const initialFormState: ActivityFormState = {
   error: '',
   isSubmitting: false,
 }
-
-const selectClassName =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-[11px] text-slate-900 outline-none focus:border-blue-600 focus:ring-[3px] focus:ring-blue-600/15 disabled:bg-slate-50'
 
 function toDateInputValue(value: string) {
   return value ? value.slice(0, 10) : ''
@@ -352,29 +350,21 @@ function ActivityFormModal({
             type="number"
             value={formData.estimatedCost}
           />
-          <div className="grid gap-2">
-            <label
-              className="text-[0.92rem] font-bold text-slate-900"
-              htmlFor="activity-status"
-            >
-              Status
-            </label>
-            <select
-              className={selectClassName}
-              disabled={isSubmitting}
-              id="activity-status"
-              name="status"
-              onChange={handleChange}
-              required
-              value={formData.status}
-            >
-              {activityStatuses.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            disabled={isSubmitting}
+            id="activity-status"
+            label="Status"
+            name="status"
+            onChange={handleChange}
+            required
+            value={formData.status}
+          >
+            {activityStatuses.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </Select>
         </div>
 
         <Textarea

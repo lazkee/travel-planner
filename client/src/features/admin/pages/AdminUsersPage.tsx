@@ -6,6 +6,7 @@ import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import EmptyState from '../../../components/ui/EmptyState'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import LoadingSpinner from '../../../components/ui/LoadingSpinner'
+import Select from '../../../components/ui/Select'
 import { useAuth } from '../../../context/AuthContext'
 import { useToast } from '../../../context/ToastContext'
 import {
@@ -173,8 +174,9 @@ function AdminUsersPage() {
                         {user.email || 'No email'}
                       </td>
                       <td className="px-4 py-4">
-                        <select
-                          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none transition focus:border-blue-500 focus:ring-[3px] focus:ring-blue-600/15 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                        <Select
+                          aria-label={`Role for ${user.name || user.email}`}
+                          className="py-2 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:text-slate-400"
                           disabled={isUpdatingUser}
                           name={`role-${user.id}`}
                           onChange={(event) =>
@@ -190,7 +192,7 @@ function AdminUsersPage() {
                               {role}
                             </option>
                           ))}
-                        </select>
+                        </Select>
                       </td>
                       <td className="px-4 py-4 text-slate-600">
                         {formatDate(user.createdAt)}

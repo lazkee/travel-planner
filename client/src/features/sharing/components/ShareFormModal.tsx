@@ -5,6 +5,7 @@ import Button from '../../../components/ui/Button'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
 import Input from '../../../components/ui/Input'
 import Modal from '../../../components/ui/Modal'
+import Select from '../../../components/ui/Select'
 import type {
   CreateShareRequestDto,
   ShareAccessLevel,
@@ -20,9 +21,6 @@ type ShareFormData = {
   accessLevel: ShareAccessLevel | ''
   expiresAt: string
 }
-
-const selectClassName =
-  'w-full rounded-lg border border-slate-200 bg-white px-3 py-[11px] text-slate-900 outline-none focus:border-blue-600 focus:ring-[3px] focus:ring-blue-600/15 disabled:bg-slate-50'
 
 function toDateTimeInputValue(date: Date) {
   const timezoneOffsetMs = date.getTimezoneOffset() * 60 * 1000
@@ -126,26 +124,18 @@ function ShareFormModal({
       <form className="grid gap-4" onSubmit={handleSubmit}>
         {error ? <ErrorAlert message={error} /> : null}
 
-        <div className="grid gap-2">
-          <label
-            className="text-[0.92rem] font-bold text-slate-900"
-            htmlFor="accessLevel"
-          >
-            Access level
-          </label>
-          <select
-            className={selectClassName}
-            disabled={isSubmitting}
-            id="accessLevel"
-            name="accessLevel"
-            onChange={handleChange}
-            required
-            value={formData.accessLevel}
-          >
-            <option value="View">View</option>
-            <option value="Edit">Edit</option>
-          </select>
-        </div>
+        <Select
+          disabled={isSubmitting}
+          id="accessLevel"
+          label="Access level"
+          name="accessLevel"
+          onChange={handleChange}
+          required
+          value={formData.accessLevel}
+        >
+          <option value="View">View</option>
+          <option value="Edit">Edit</option>
+        </Select>
 
         <Input
           disabled={isSubmitting}

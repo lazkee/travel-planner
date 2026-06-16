@@ -20,6 +20,7 @@
   <Resources>
     <Endpoints>
       <Endpoint Name="ServiceEndpoint" Protocol="http" Port="8081" />
+      <Endpoint Name="ServiceEndpointV2" Protocol="tcp" Port="0" />
     </Endpoints>
   </Resources>
 </ServiceManifest>

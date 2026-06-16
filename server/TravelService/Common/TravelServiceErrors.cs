@@ -23,6 +23,9 @@ public static class TravelServiceErrors
 
         public static readonly Error InvalidBudget =
             new("TravelPlan.InvalidBudget", "Budget cannot be negative.");
+
+        public static readonly Error UserRoleLookupFailed =
+            new("TravelPlan.UserRoleLookupFailed", "Unable to verify travel plan owner roles.");
     }
 
     public static class DestinationErrors

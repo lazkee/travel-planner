@@ -10,21 +10,26 @@ namespace TravelService.Services;
 
 public class TravelPlanService : ITravelPlanService
 {
+    private const string UserRole = "User";
+
     private readonly TravelDbContext _context;
     private readonly IMapper _mapper;
     private readonly ISharingClientService _sharingClient;
     private readonly ITravelPlanOwnershipValidator _ownershipValidator;
+    private readonly IUserRoleLookupClient _userRoleLookupClient;
 
     public TravelPlanService(
         TravelDbContext context,
         IMapper mapper,
         ISharingClientService sharingClient,
-        ITravelPlanOwnershipValidator ownershipValidator)
+        ITravelPlanOwnershipValidator ownershipValidator,
+        IUserRoleLookupClient userRoleLookupClient)
     {
         _context = context;
         _mapper = mapper;
         _sharingClient = sharingClient;
         _ownershipValidator = ownershipValidator;
+        _userRoleLookupClient = userRoleLookupClient;
     }
 
     public async Task<Result<List<TravelPlanDto>>> GetUserPlansAsync(int userId)
@@ -44,7 +49,17 @@ public class TravelPlanService : ITravelPlanService
             .OrderBy(p => p.Id)
             .ToListAsync();
 
-        return Result<List<TravelPlanDto>>.Success(_mapper.Map<List<TravelPlanDto>>(plans));
+        var ownerIds = plans.Select(plan => plan.UserId).Distinct();
+        var rolesResult = await _userRoleLookupClient.GetRolesByUserIdsAsync(ownerIds);
+        if (rolesResult.IsFailure)
+            return Result<List<TravelPlanDto>>.Failure(rolesResult.Error!);
+
+        var roles = rolesResult.Value!;
+        var normalUserPlans = plans
+            .Where(plan => roles.TryGetValue(plan.UserId, out var role) && role == UserRole)
+            .ToList();
+
+        return Result<List<TravelPlanDto>>.Success(_mapper.Map<List<TravelPlanDto>>(normalUserPlans));
     }
 
     public async Task<Result<TravelPlanDto>> GetByIdAsync(int userId, int planId)

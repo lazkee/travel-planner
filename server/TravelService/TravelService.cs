@@ -149,6 +149,7 @@ internal sealed class TravelService : StatelessService, ITravelDataCleanupServic
 
         services.AddAutoMapper(typeof(TravelPlanProfile).Assembly);
         services.AddHttpContextAccessor();
+        services.AddScoped<IUserRoleLookupClient, UserRoleLookupClient>();
         services.AddScoped<ITravelPlanOwnershipValidator, TravelPlanOwnershipValidator>();
         services.AddScoped<ITravelPlanService, TravelPlanService>();
         services.AddScoped<ITravelPlanPdfExportService, TravelPlanPdfExportService>();

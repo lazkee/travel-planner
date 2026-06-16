@@ -71,6 +71,7 @@ public class AdminUsersController : ControllerBase
     {
         "Admin.UserNotFound"            => NotFound(new { message = error.Message }),
         "Admin.SelfDeleteNotAllowed"    => StatusCode(403, new { message = error.Message }),
+        "Admin.AdminTargetForbidden"    => StatusCode(403, new { message = error.Message }),
         "Admin.TravelDataCleanupFailed" => StatusCode(502, new { message = error.Message }),
         _                               => BadRequest(new { message = error.Message })
     };

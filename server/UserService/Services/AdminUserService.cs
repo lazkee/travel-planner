@@ -20,6 +20,7 @@ public class AdminUserService : IAdminUserService
     public async Task<Result<List<AdminUserDto>>> GetAllAsync()
     {
         var users = await _context.Users
+            .Where(u => u.Role == UserRole.User)
             .OrderBy(u => u.Id)
             .ToListAsync();
 
@@ -31,6 +32,9 @@ public class AdminUserService : IAdminUserService
         var user = await _context.Users.FindAsync(id);
         if (user == null)
             return Result<AdminUserDto>.Failure(AdminUserErrors.NotFound);
+
+        if (user.Role == UserRole.Admin)
+            return Result<AdminUserDto>.Failure(AdminUserErrors.AdminTargetForbidden);
 
         return Result<AdminUserDto>.Success(BuildDto(user));
     }
@@ -47,6 +51,9 @@ public class AdminUserService : IAdminUserService
         var user = await _context.Users.FindAsync(id);
         if (user == null)
             return Result<AdminUserDto>.Failure(AdminUserErrors.NotFound);
+
+        if (user.Role == UserRole.Admin)
+            return Result<AdminUserDto>.Failure(AdminUserErrors.AdminTargetForbidden);
 
         var email = NormalizeEmail(request.Email);
         var emailExists = await _context.Users.AnyAsync(u => u.Id != id && u.Email == email);
@@ -72,6 +79,9 @@ public class AdminUserService : IAdminUserService
         if (user == null)
             return Result<AdminUserDto>.Failure(AdminUserErrors.NotFound);
 
+        if (user.Role == UserRole.Admin)
+            return Result<AdminUserDto>.Failure(AdminUserErrors.AdminTargetForbidden);
+
         user.Role = request.Role;
         await _context.SaveChangesAsync();
 
@@ -86,6 +96,9 @@ public class AdminUserService : IAdminUserService
         var user = await _context.Users.FindAsync(id);
         if (user == null)
             return Result<bool>.Failure(AdminUserErrors.NotFound);
+
+        if (user.Role == UserRole.Admin)
+            return Result<bool>.Failure(AdminUserErrors.AdminTargetForbidden);
 
         var cleanupResult = await _travelDataCleanupClient.DeleteUserTravelDataAsync(id);
         if (cleanupResult.IsFailure)
@@ -126,6 +139,9 @@ public class AdminUserService : IAdminUserService
 
         public static readonly Error SelfDeleteNotAllowed =
             new("Admin.SelfDeleteNotAllowed", "You cannot delete the currently authenticated admin account.");
+
+        public static readonly Error AdminTargetForbidden =
+            new("Admin.AdminTargetForbidden", "Admin accounts cannot be managed by another admin.");
 
         public static readonly Error InvalidRole =
             new("Admin.InvalidRole", "User role is invalid.");

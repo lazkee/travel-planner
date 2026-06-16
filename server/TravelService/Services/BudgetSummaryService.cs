@@ -23,6 +23,11 @@ public class BudgetSummaryService : IBudgetSummaryService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<BudgetSummaryDto>.Failure(planError);
 
+        return await GetForPlanAsync(planId);
+    }
+
+    public async Task<Result<BudgetSummaryDto>> GetForPlanAsync(int planId)
+    {
         var plan = await _context.TravelPlans
             .Include(tp => tp.Expenses)
             .Include(tp => tp.Activities)

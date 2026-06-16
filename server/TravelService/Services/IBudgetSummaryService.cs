@@ -5,5 +5,6 @@ namespace TravelService.Services;
 
 public interface IBudgetSummaryService
 {
+    Task<Result<BudgetSummaryDto>> GetForPlanAsync(int planId);
     Task<Result<BudgetSummaryDto>> GetForPlanAsync(int userId, int planId);
 }

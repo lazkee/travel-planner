@@ -158,6 +158,7 @@ internal sealed class TravelService : StatelessService, ITravelDataCleanupServic
         services.AddScoped<IChecklistItemService, ChecklistItemService>();
         services.AddScoped<IBudgetSummaryService, BudgetSummaryService>();
         services.AddScoped<ISharingClientService, SharingClientService>();
+        services.AddScoped<ISharedAccessValidator, SharedAccessValidator>();
         services.AddScoped<ISharedPlanService, SharedPlanService>();
         services.AddScoped<ISharedEditService, SharedEditService>();
         services.AddScoped<ITravelDataCleanupRemotingHandler, TravelDataCleanupRemotingHandler>();

@@ -80,6 +80,11 @@ public class TravelPlanService : ITravelPlanService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<TravelPlanDto>.Failure(planError);
 
+        return await UpdateForPlanAsync(planId, request);
+    }
+
+    public async Task<Result<TravelPlanDto>> UpdateForPlanAsync(int planId, TravelPlanRequestDto request)
+    {
         var dateError = ValidateDatesForUpdate(request);
         if (dateError != null) return Result<TravelPlanDto>.Failure(dateError);
 
@@ -90,6 +95,8 @@ public class TravelPlanService : ITravelPlanService
             return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.DateRangeExcludesActivities);
 
         var plan = await _context.TravelPlans.FindAsync(planId);
+        if (plan == null)
+            return Result<TravelPlanDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
 
         _mapper.Map(request, plan);
         await _context.SaveChangesAsync();

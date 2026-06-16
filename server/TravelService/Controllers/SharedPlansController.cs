@@ -18,6 +18,7 @@ public class SharedPlansController : ControllerBase
     }
 
     [HttpGet("{token}")]
+    [HttpGet("{token}/travel-plan")]
     public async Task<IActionResult> Get(string token)
     {
         var result = await _sharedPlanService.GetByShareTokenAsync(token);

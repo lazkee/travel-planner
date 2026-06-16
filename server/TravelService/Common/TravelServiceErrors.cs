@@ -32,6 +32,9 @@ public static class TravelServiceErrors
 
         public static readonly Error InvalidDateRange =
             new("Destination.InvalidDateRange", "Departure date cannot be before arrival date.");
+
+        public static readonly Error DateOutsideTravelPlan =
+            new("Destination.DateOutsideTravelPlan", "Destination dates must be within the travel plan date range.");
     }
 
     public static class ActivityErrors
@@ -44,6 +47,9 @@ public static class TravelServiceErrors
 
         public static readonly Error DateOutsideTravelPlan =
             new("Activity.DateOutsideTravelPlan", "Activity date must be within the travel plan date range.");
+
+        public static readonly Error InvalidStatus =
+            new("Activity.InvalidStatus", "Activity status is invalid.");
     }
 
     public static class ExpenseErrors
@@ -53,6 +59,12 @@ public static class TravelServiceErrors
 
         public static readonly Error InvalidAmount =
             new("Expense.InvalidAmount", "Expense amount cannot be negative.");
+
+        public static readonly Error DateOutsideTravelPlan =
+            new("Expense.DateOutsideTravelPlan", "Expense date must be within the travel plan date range.");
+
+        public static readonly Error InvalidCategory =
+            new("Expense.InvalidCategory", "Expense category is invalid.");
     }
 
     public static class ChecklistItemErrors

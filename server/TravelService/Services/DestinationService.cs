@@ -26,6 +26,15 @@ public class DestinationService : IDestinationService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<List<DestinationDto>>.Failure(planError);
 
+        return await GetForPlanAsync(planId);
+    }
+
+    public async Task<Result<List<DestinationDto>>> GetForPlanAsync(int planId)
+    {
+        var planExists = await _context.TravelPlans.AnyAsync(p => p.Id == planId);
+        if (!planExists)
+            return Result<List<DestinationDto>>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
         var destinations = await _context.Destinations
             .Where(d => d.TravelPlanId == planId)
             .ToListAsync();
@@ -37,6 +46,15 @@ public class DestinationService : IDestinationService
     {
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<DestinationDto>.Failure(planError);
+
+        return await GetByIdForPlanAsync(planId, destinationId);
+    }
+
+    public async Task<Result<DestinationDto>> GetByIdForPlanAsync(int planId, int destinationId)
+    {
+        var planExists = await _context.TravelPlans.AnyAsync(p => p.Id == planId);
+        if (!planExists)
+            return Result<DestinationDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
 
         var destination = await _context.Destinations
             .FirstOrDefaultAsync(d => d.Id == destinationId && d.TravelPlanId == planId);
@@ -52,8 +70,20 @@ public class DestinationService : IDestinationService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<DestinationDto>.Failure(planError);
 
+        return await CreateForPlanAsync(planId, request);
+    }
+
+    public async Task<Result<DestinationDto>> CreateForPlanAsync(int planId, DestinationRequestDto request)
+    {
+        var plan = await _context.TravelPlans.FindAsync(planId);
+        if (plan == null)
+            return Result<DestinationDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
         if (request.DepartureDate < request.ArrivalDate)
             return Result<DestinationDto>.Failure(TravelServiceErrors.DestinationErrors.InvalidDateRange);
+
+        if (!AreDestinationDatesInsideTravelPlan(request, plan))
+            return Result<DestinationDto>.Failure(TravelServiceErrors.DestinationErrors.DateOutsideTravelPlan);
 
         var destination = _mapper.Map<Destination>(request);
         destination.TravelPlanId = planId;
@@ -69,6 +99,15 @@ public class DestinationService : IDestinationService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<DestinationDto>.Failure(planError);
 
+        return await UpdateForPlanAsync(planId, destinationId, request);
+    }
+
+    public async Task<Result<DestinationDto>> UpdateForPlanAsync(int planId, int destinationId, DestinationRequestDto request)
+    {
+        var plan = await _context.TravelPlans.FindAsync(planId);
+        if (plan == null)
+            return Result<DestinationDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
         var destination = await _context.Destinations
             .FirstOrDefaultAsync(d => d.Id == destinationId && d.TravelPlanId == planId);
 
@@ -77,6 +116,9 @@ public class DestinationService : IDestinationService
 
         if (request.DepartureDate < request.ArrivalDate)
             return Result<DestinationDto>.Failure(TravelServiceErrors.DestinationErrors.InvalidDateRange);
+
+        if (!AreDestinationDatesInsideTravelPlan(request, plan))
+            return Result<DestinationDto>.Failure(TravelServiceErrors.DestinationErrors.DateOutsideTravelPlan);
 
         _mapper.Map(request, destination);
         await _context.SaveChangesAsync();
@@ -89,6 +131,15 @@ public class DestinationService : IDestinationService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<bool>.Failure(planError);
 
+        return await DeleteForPlanAsync(planId, destinationId);
+    }
+
+    public async Task<Result<bool>> DeleteForPlanAsync(int planId, int destinationId)
+    {
+        var planExists = await _context.TravelPlans.AnyAsync(p => p.Id == planId);
+        if (!planExists)
+            return Result<bool>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
         var destination = await _context.Destinations
             .FirstOrDefaultAsync(d => d.Id == destinationId && d.TravelPlanId == planId);
 
@@ -100,4 +151,8 @@ public class DestinationService : IDestinationService
 
         return Result<bool>.Success(true);
     }
+
+    private static bool AreDestinationDatesInsideTravelPlan(DestinationRequestDto request, TravelPlan plan) =>
+        request.ArrivalDate.Date >= plan.StartDate.Date &&
+        request.DepartureDate.Date <= plan.EndDate.Date;
 }

@@ -26,6 +26,15 @@ public class ActivityService : IActivityService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<List<ActivityDto>>.Failure(planError);
 
+        return await GetForPlanAsync(planId);
+    }
+
+    public async Task<Result<List<ActivityDto>>> GetForPlanAsync(int planId)
+    {
+        var planExists = await _context.TravelPlans.AnyAsync(p => p.Id == planId);
+        if (!planExists)
+            return Result<List<ActivityDto>>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
         var activities = await _context.Activities
             .Where(a => a.TravelPlanId == planId)
             .ToListAsync();
@@ -37,6 +46,15 @@ public class ActivityService : IActivityService
     {
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<ActivityDto>.Failure(planError);
+
+        return await GetByIdForPlanAsync(planId, activityId);
+    }
+
+    public async Task<Result<ActivityDto>> GetByIdForPlanAsync(int planId, int activityId)
+    {
+        var planExists = await _context.TravelPlans.AnyAsync(p => p.Id == planId);
+        if (!planExists)
+            return Result<ActivityDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
 
         var activity = await _context.Activities
             .FirstOrDefaultAsync(a => a.Id == activityId && a.TravelPlanId == planId);
@@ -52,6 +70,11 @@ public class ActivityService : IActivityService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<ActivityDto>.Failure(planError);
 
+        return await CreateForPlanAsync(planId, request);
+    }
+
+    public async Task<Result<ActivityDto>> CreateForPlanAsync(int planId, ActivityRequestDto request)
+    {
         var plan = await _context.TravelPlans.FindAsync(planId);
         if (plan == null)
             return Result<ActivityDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
@@ -61,6 +84,9 @@ public class ActivityService : IActivityService
 
         if (request.EstimatedCost < 0)
             return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.InvalidEstimatedCost);
+
+        if (!Enum.IsDefined(typeof(ActivityStatus), request.Status))
+            return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.InvalidStatus);
 
         var activity = _mapper.Map<TravelActivity>(request);
         activity.TravelPlanId = planId;
@@ -76,21 +102,29 @@ public class ActivityService : IActivityService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<ActivityDto>.Failure(planError);
 
+        return await UpdateForPlanAsync(planId, activityId, request);
+    }
+
+    public async Task<Result<ActivityDto>> UpdateForPlanAsync(int planId, int activityId, ActivityRequestDto request)
+    {
+        var plan = await _context.TravelPlans.FindAsync(planId);
+        if (plan == null)
+            return Result<ActivityDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
         var activity = await _context.Activities
             .FirstOrDefaultAsync(a => a.Id == activityId && a.TravelPlanId == planId);
 
         if (activity == null)
             return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.NotFound);
 
-        var plan = await _context.TravelPlans.FindAsync(planId);
-        if (plan == null)
-            return Result<ActivityDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
-
         if (!IsActivityDateInsideTravelPlan(request.Date, plan))
             return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.DateOutsideTravelPlan);
 
         if (request.EstimatedCost < 0)
             return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.InvalidEstimatedCost);
+
+        if (!Enum.IsDefined(typeof(ActivityStatus), request.Status))
+            return Result<ActivityDto>.Failure(TravelServiceErrors.ActivityErrors.InvalidStatus);
 
         _mapper.Map(request, activity);
         await _context.SaveChangesAsync();
@@ -102,6 +136,15 @@ public class ActivityService : IActivityService
     {
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<bool>.Failure(planError);
+
+        return await DeleteForPlanAsync(planId, activityId);
+    }
+
+    public async Task<Result<bool>> DeleteForPlanAsync(int planId, int activityId)
+    {
+        var planExists = await _context.TravelPlans.AnyAsync(p => p.Id == planId);
+        if (!planExists)
+            return Result<bool>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
 
         var activity = await _context.Activities
             .FirstOrDefaultAsync(a => a.Id == activityId && a.TravelPlanId == planId);

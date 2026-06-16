@@ -26,6 +26,15 @@ public class ExpenseService : IExpenseService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<List<ExpenseDto>>.Failure(planError);
 
+        return await GetForPlanAsync(planId);
+    }
+
+    public async Task<Result<List<ExpenseDto>>> GetForPlanAsync(int planId)
+    {
+        var planExists = await _context.TravelPlans.AnyAsync(p => p.Id == planId);
+        if (!planExists)
+            return Result<List<ExpenseDto>>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
         var expenses = await _context.Expenses
             .Where(e => e.TravelPlanId == planId)
             .ToListAsync();
@@ -37,6 +46,15 @@ public class ExpenseService : IExpenseService
     {
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<ExpenseDto>.Failure(planError);
+
+        return await GetByIdForPlanAsync(planId, expenseId);
+    }
+
+    public async Task<Result<ExpenseDto>> GetByIdForPlanAsync(int planId, int expenseId)
+    {
+        var planExists = await _context.TravelPlans.AnyAsync(p => p.Id == planId);
+        if (!planExists)
+            return Result<ExpenseDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
 
         var expense = await _context.Expenses
             .FirstOrDefaultAsync(e => e.Id == expenseId && e.TravelPlanId == planId);
@@ -52,8 +70,23 @@ public class ExpenseService : IExpenseService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<ExpenseDto>.Failure(planError);
 
+        return await CreateForPlanAsync(planId, request);
+    }
+
+    public async Task<Result<ExpenseDto>> CreateForPlanAsync(int planId, ExpenseRequestDto request)
+    {
+        var plan = await _context.TravelPlans.FindAsync(planId);
+        if (plan == null)
+            return Result<ExpenseDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
         if (request.Amount < 0)
             return Result<ExpenseDto>.Failure(TravelServiceErrors.ExpenseErrors.InvalidAmount);
+
+        if (!IsExpenseDateInsideTravelPlan(request.Date, plan))
+            return Result<ExpenseDto>.Failure(TravelServiceErrors.ExpenseErrors.DateOutsideTravelPlan);
+
+        if (!Enum.IsDefined(typeof(ExpenseCategory), request.Category))
+            return Result<ExpenseDto>.Failure(TravelServiceErrors.ExpenseErrors.InvalidCategory);
 
         var expense = _mapper.Map<Expense>(request);
         expense.TravelPlanId = planId;
@@ -69,6 +102,15 @@ public class ExpenseService : IExpenseService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<ExpenseDto>.Failure(planError);
 
+        return await UpdateForPlanAsync(planId, expenseId, request);
+    }
+
+    public async Task<Result<ExpenseDto>> UpdateForPlanAsync(int planId, int expenseId, ExpenseRequestDto request)
+    {
+        var plan = await _context.TravelPlans.FindAsync(planId);
+        if (plan == null)
+            return Result<ExpenseDto>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
         var expense = await _context.Expenses
             .FirstOrDefaultAsync(e => e.Id == expenseId && e.TravelPlanId == planId);
 
@@ -77,6 +119,12 @@ public class ExpenseService : IExpenseService
 
         if (request.Amount < 0)
             return Result<ExpenseDto>.Failure(TravelServiceErrors.ExpenseErrors.InvalidAmount);
+
+        if (!IsExpenseDateInsideTravelPlan(request.Date, plan))
+            return Result<ExpenseDto>.Failure(TravelServiceErrors.ExpenseErrors.DateOutsideTravelPlan);
+
+        if (!Enum.IsDefined(typeof(ExpenseCategory), request.Category))
+            return Result<ExpenseDto>.Failure(TravelServiceErrors.ExpenseErrors.InvalidCategory);
 
         _mapper.Map(request, expense);
         await _context.SaveChangesAsync();
@@ -89,6 +137,15 @@ public class ExpenseService : IExpenseService
         var planError = await _ownershipValidator.ValidateAsync(userId, planId);
         if (planError != null) return Result<bool>.Failure(planError);
 
+        return await DeleteForPlanAsync(planId, expenseId);
+    }
+
+    public async Task<Result<bool>> DeleteForPlanAsync(int planId, int expenseId)
+    {
+        var planExists = await _context.TravelPlans.AnyAsync(p => p.Id == planId);
+        if (!planExists)
+            return Result<bool>.Failure(TravelServiceErrors.TravelPlanErrors.NotFound);
+
         var expense = await _context.Expenses
             .FirstOrDefaultAsync(e => e.Id == expenseId && e.TravelPlanId == planId);
 
@@ -100,4 +157,7 @@ public class ExpenseService : IExpenseService
 
         return Result<bool>.Success(true);
     }
+
+    private static bool IsExpenseDateInsideTravelPlan(DateTime expenseDate, TravelPlan plan) =>
+        expenseDate.Date >= plan.StartDate.Date && expenseDate.Date <= plan.EndDate.Date;
 }

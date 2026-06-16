@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using TravelPlanner.Shared.Common;
+using TravelPlanner.Shared.Enums;
 using TravelService.Data;
 using TravelService.Dtos;
 
@@ -10,52 +11,42 @@ public class SharedPlanService : ISharedPlanService
 {
     private readonly TravelDbContext _context;
     private readonly IMapper _mapper;
-    private readonly ISharingClientService _sharingClient;
+    private readonly ISharedAccessValidator _sharedAccessValidator;
+    private readonly IBudgetSummaryService _budgetSummaryService;
 
-    public SharedPlanService(TravelDbContext context, IMapper mapper, ISharingClientService sharingClient)
+    public SharedPlanService(
+        TravelDbContext context,
+        IMapper mapper,
+        ISharedAccessValidator sharedAccessValidator,
+        IBudgetSummaryService budgetSummaryService)
     {
         _context = context;
         _mapper = mapper;
-        _sharingClient = sharingClient;
+        _sharedAccessValidator = sharedAccessValidator;
+        _budgetSummaryService = budgetSummaryService;
     }
 
     public async Task<Result<SharedTravelPlanDto>> GetByShareTokenAsync(string token)
     {
-        var tokenResult = await _sharingClient.ValidateShareAsync(token);
-        if (tokenResult.IsFailure)
-            return Result<SharedTravelPlanDto>.Failure(tokenResult.Error!);
+        var accessResult = await _sharedAccessValidator.ValidateReadAccessAsync(token);
+        if (accessResult.IsFailure)
+            return Result<SharedTravelPlanDto>.Failure(accessResult.Error!);
 
-        var shareToken = tokenResult.Value!;
-
+        var access = accessResult.Value!;
         var plan = await _context.TravelPlans
             .Include(p => p.Destinations)
             .Include(p => p.Activities)
             .Include(p => p.Expenses)
             .Include(p => p.ChecklistItems)
-            .FirstOrDefaultAsync(p => p.Id == shareToken.TravelPlanId);
+            .FirstOrDefaultAsync(p => p.Id == access.TravelPlanId);
 
         if (plan == null)
             return Result<SharedTravelPlanDto>.Failure(
                 new Error("TravelPlan.NotFound", "The travel plan associated with this token no longer exists."));
 
-        var expenses = plan.Expenses.ToList();
-        var totalExpenses = expenses.Sum(e => e.Amount);
-
-        var budgetSummary = new BudgetSummaryDto
-        {
-            TravelPlanId = plan.Id,
-            Budget = plan.Budget,
-            TotalExpenses = totalExpenses,
-            RemainingBudget = plan.Budget - totalExpenses,
-            Categories = expenses
-                .GroupBy(e => e.Category)
-                .Select(g => new BudgetCategorySummaryDto
-                {
-                    Category = g.Key,
-                    TotalAmount = g.Sum(e => e.Amount)
-                })
-                .ToList()
-        };
+        var budgetSummaryResult = await _budgetSummaryService.GetForPlanAsync(plan.Id);
+        if (budgetSummaryResult.IsFailure)
+            return Result<SharedTravelPlanDto>.Failure(budgetSummaryResult.Error!);
 
         var dto = new SharedTravelPlanDto
         {
@@ -71,9 +62,9 @@ public class SharedPlanService : ISharedPlanService
             Activities = _mapper.Map<List<ActivityDto>>(plan.Activities),
             Expenses = _mapper.Map<List<ExpenseDto>>(plan.Expenses),
             ChecklistItems = _mapper.Map<List<ChecklistItemDto>>(plan.ChecklistItems),
-            BudgetSummary = budgetSummary,
-            AccessLevel = shareToken.AccessLevel,
-            ExpiresAtUtc = shareToken.ExpiresAtUtc
+            BudgetSummary = budgetSummaryResult.Value!,
+            AccessLevel = Enum.Parse<ShareAccessLevel>(access.AccessLevel),
+            ExpiresAtUtc = access.ExpiresAt
         };
 
         return Result<SharedTravelPlanDto>.Success(dto);

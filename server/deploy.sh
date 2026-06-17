@@ -37,6 +37,14 @@ for SVC in "${SERVICES[@]}"; do
 done
 
 SF_ENDPOINT="http://localhost:19080"
+
+echo "=== Waiting for SF cluster to be ready ==="
+until curl -sf "$SF_ENDPOINT/\$/GetClusterHealth?api-version=6.0" | grep -q '"AggregatedHealthState":"Ok"'; do
+  echo "  SF not ready yet, retrying in 5s..."
+  sleep 5
+done
+echo "SF cluster is ready."
+
 sfctl cluster select --endpoint "$SF_ENDPOINT"
 
 sfctl application delete --application-id "$APP_NAME" 2>/dev/null || true

@@ -1,4 +1,50 @@
 services:
+  travelplanner-sql-users:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: travelplanner-sql-users
+    hostname: travelplanner-sql-users
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - travelplanner-sqldata-users:/var/opt/mssql
+    networks:
+      - travelplanner-net
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-Q", "SELECT 1", "-C"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  travelplanner-sql-travel:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: travelplanner-sql-travel
+    hostname: travelplanner-sql-travel
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1434:1433"
+    volumes:
+      - travelplanner-sqldata-travel:/var/opt/mssql
+    networks:
+      - travelplanner-net
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-Q", "SELECT 1", "-C"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
   travelplanner-sf:
     image: mcr.microsoft.com/service-fabric/onebox:u20_9.1.1206.1
     platform: linux/amd64
@@ -19,23 +65,11 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-    networks:
-      - travelplanner-net
-    restart: unless-stopped
-
-  travelplanner-sql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    platform: linux/amd64
-    container_name: travelplanner-sql
-    hostname: travelplanner-sql
-    environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
-      MSSQL_PID: "Developer"
-    ports:
-      - "1433:1433"
-    volumes:
-      - travelplanner-sqldata:/var/opt/mssql
+    depends_on:
+      travelplanner-sql-users:
+        condition: service_healthy
+      travelplanner-sql-travel:
+        condition: service_healthy
     networks:
       - travelplanner-net
     restart: unless-stopped
@@ -46,4 +80,5 @@ networks:
     driver: bridge
 
 volumes:
-  travelplanner-sqldata:
+  travelplanner-sqldata-users:
+  travelplanner-sqldata-travel:

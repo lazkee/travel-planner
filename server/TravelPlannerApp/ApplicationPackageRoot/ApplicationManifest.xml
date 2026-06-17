@@ -25,7 +25,7 @@
       </StatelessService>
     </Service>
     <Service Name="SharingService" ServicePackageActivationMode="ExclusiveProcess">
-      <StatefulService ServiceTypeName="SharingServiceType" TargetReplicaSetSize="1" MinReplicaSetSize="1">
+      <StatefulService ServiceTypeName="SharingServiceType" TargetReplicaSetSize="3" MinReplicaSetSize="2">
         <SingletonPartition />
       </StatefulService>
     </Service>

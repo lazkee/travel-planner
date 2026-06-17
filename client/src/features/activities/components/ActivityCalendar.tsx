@@ -59,7 +59,14 @@ function ActivityCalendar({
   readonly = false,
   onEdit,
 }: ActivityCalendarProps) {
-  const [calendarDate, setCalendarDate] = useState(new Date())
+  const [calendarDate, setCalendarDate] = useState(() => {
+    if (activities.length === 0) return new Date()
+    const earliest = activities.reduce((min, a) => {
+      const d = getActivityStart(a)
+      return d < min ? d : min
+    }, getActivityStart(activities[0]))
+    return earliest
+  })
   const [calendarView, setCalendarView] = useState<View>('month')
   const events = activities.map(mapActivityToEvent)
 

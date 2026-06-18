@@ -12,6 +12,7 @@ import Modal from '../../../components/ui/Modal'
 import Select from '../../../components/ui/Select'
 import { useAuth } from '../../../context/AuthContext'
 import { useToast } from '../../../context/ToastContext'
+import { formatDateTime } from '../../../utils/format'
 import {
   deleteAdminUser,
   getAdminUsers,
@@ -30,17 +31,6 @@ type AdminUserEditFormData = {
 const emptyEditFormData: AdminUserEditFormData = {
   name: '',
   email: '',
-}
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-})
-
-function formatDate(value: string) {
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? 'Not set' : dateFormatter.format(date)
 }
 
 function isValidEmail(value: string) {
@@ -305,7 +295,7 @@ function AdminUsersPage() {
                         </Select>
                       </td>
                       <td className="px-4 py-4 text-slate-600">
-                        {formatDate(user.createdAt)}
+                        {formatDateTime(user.createdAt)}
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex flex-wrap gap-2">

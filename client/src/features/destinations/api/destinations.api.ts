@@ -1,48 +1,16 @@
 import travelServiceClient from '../../../api/travelServiceClient'
+import {
+  getNumber,
+  getOptionalString,
+  getString,
+  isRecord,
+} from '../../../utils/dto'
 import type {
   DestinationDto,
   DestinationRequestDto,
 } from '../types/destination.types'
 
-type UnknownRecord = Record<string, unknown>
-
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === 'object' && value !== null
-}
-
-function getRecordValue(source: UnknownRecord, keys: string[]): unknown {
-  return keys.map((key) => source[key]).find((value) => value !== undefined)
-}
-
-function getNumber(source: UnknownRecord, keys: string[]) {
-  const value = getRecordValue(source, keys)
-
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    const parsedValue = Number(value)
-
-    return Number.isFinite(parsedValue) ? parsedValue : 0
-  }
-
-  return 0
-}
-
-function getString(source: UnknownRecord, keys: string[]) {
-  const value = getRecordValue(source, keys)
-
-  return typeof value === 'string' ? value : ''
-}
-
-function getOptionalString(source: UnknownRecord, keys: string[]) {
-  const value = getString(source, keys).trim()
-
-  return value || undefined
-}
-
-function normalizeDestination(data: unknown): DestinationDto {
+export function normalizeDestination(data: unknown): DestinationDto {
   const source = isRecord(data) ? data : {}
 
   return {

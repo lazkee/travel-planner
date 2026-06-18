@@ -1,18 +1,15 @@
 import axios from 'axios'
 import travelServiceClient from '../../../api/travelServiceClient'
+import { isRecord } from '../../../utils/dto'
+import { normalizeChecklistItem } from '../../checklist/api/checklist.api'
+import { READONLY_MUTATION_MESSAGE } from '../constants'
 import type {
   ChecklistItemDto,
   ChecklistItemRequestDto,
 } from '../../checklist/types/checklist.types'
 
-type UnknownRecord = Record<string, unknown>
-
 function getSharedBasePath(token: string) {
   return `/api/shared/${encodeURIComponent(token)}`
-}
-
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === 'object' && value !== null
 }
 
 function getResponseMessage(error: unknown) {
@@ -32,9 +29,7 @@ async function runSharedChecklistItemMutation<T>(
     return await request()
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 403) {
-      throw new Error(
-        getResponseMessage(error) || 'This share link does not allow editing.',
-      )
+      throw new Error(getResponseMessage(error) || READONLY_MUTATION_MESSAGE)
     }
 
     throw error
@@ -52,7 +47,7 @@ export async function createSharedChecklistItem(
     ),
   )
 
-  return response.data as ChecklistItemDto
+  return normalizeChecklistItem(response.data)
 }
 
 export async function updateSharedChecklistItem(
@@ -67,7 +62,7 @@ export async function updateSharedChecklistItem(
     ),
   )
 
-  return response.data as ChecklistItemDto
+  return normalizeChecklistItem(response.data)
 }
 
 export async function deleteSharedChecklistItem(

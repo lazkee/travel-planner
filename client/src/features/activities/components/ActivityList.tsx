@@ -1,5 +1,6 @@
 import Button from '../../../components/ui/Button'
 import Card from '../../../components/ui/Card'
+import { formatCurrency, formatLongDate } from '../../../utils/format'
 import type { ActivityDto } from '../types/activity.types'
 import ActivityStatusBadge from './ActivityStatusBadge'
 
@@ -8,23 +9,6 @@ type ActivityListProps = {
   readonly?: boolean
   onDelete?: (activity: ActivityDto) => void
   onEdit?: (activity: ActivityDto) => void
-}
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'long',
-  day: 'numeric',
-  year: 'numeric',
-})
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  currency: 'USD',
-  style: 'currency',
-})
-
-function formatDate(value: string) {
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? 'No date' : dateFormatter.format(date)
 }
 
 function formatTime(value?: string) {
@@ -78,7 +62,7 @@ function ActivityList({
       {groupedActivities.map((group) => (
         <section className="grid gap-3" key={group.date}>
           <h3 className="m-0 text-sm font-extrabold uppercase tracking-[0.08em] text-slate-500">
-            {group.date === 'undated' ? 'No date' : formatDate(group.date)}
+            {group.date === 'undated' ? 'No date' : formatLongDate(group.date)}
           </h3>
           <div className="grid gap-3">
             {group.activities.map((activity) => (
@@ -107,7 +91,7 @@ function ActivityList({
                           Estimated cost
                         </dt>
                         <dd className="m-0">
-                          {currencyFormatter.format(activity.estimatedCost)}
+                          {formatCurrency(activity.estimatedCost)}
                         </dd>
                       </div>
                     </dl>

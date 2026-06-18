@@ -1,61 +1,32 @@
 import travelServiceClient from '../../../api/travelServiceClient'
+import {
+  getEnum,
+  getNumber,
+  getOptionalString,
+  getString,
+  isRecord,
+} from '../../../utils/dto'
 import type {
   ExpenseCategory,
   ExpenseDto,
   ExpenseRequestDto,
 } from '../types/expense.types'
 
-type UnknownRecord = Record<string, unknown>
-
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === 'object' && value !== null
-}
-
-function getRecordValue(source: UnknownRecord, keys: string[]): unknown {
-  return keys.map((key) => source[key]).find((value) => value !== undefined)
-}
-
-function getNumber(source: UnknownRecord, keys: string[]) {
-  const value = getRecordValue(source, keys)
-
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    const parsedValue = Number(value)
-
-    return Number.isFinite(parsedValue) ? parsedValue : 0
-  }
-
-  return 0
-}
-
-function getString(source: UnknownRecord, keys: string[]) {
-  const value = getRecordValue(source, keys)
-
-  return typeof value === 'string' ? value : ''
-}
-
-function getOptionalString(source: UnknownRecord, keys: string[]) {
-  const value = getString(source, keys).trim()
-
-  return value || undefined
-}
+const EXPENSE_CATEGORIES = [
+  'Accommodation',
+  'Transport',
+  'Food',
+  'Activities',
+  'Shopping',
+  'Tickets',
+  'Other',
+] as const
 
 function normalizeCategory(value: string): ExpenseCategory {
-  return value === 'Accommodation' ||
-    value === 'Transport' ||
-    value === 'Food' ||
-    value === 'Activities' ||
-    value === 'Shopping' ||
-    value === 'Tickets' ||
-    value === 'Other'
-    ? value
-    : 'Other'
+  return getEnum(value, EXPENSE_CATEGORIES, 'Other')
 }
 
-function normalizeExpense(data: unknown): ExpenseDto {
+export function normalizeExpense(data: unknown): ExpenseDto {
   const source = isRecord(data) ? data : {}
 
   return {

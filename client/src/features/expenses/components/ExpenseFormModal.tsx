@@ -182,11 +182,13 @@ function ExpenseFormModal({
             required
             value={formData.category}
           >
-            {expenseCategories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
+            {expenseCategories
+              .filter((category) => category !== 'Activities')
+              .map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
           </Select>
 
           <Input

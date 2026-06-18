@@ -1,4 +1,5 @@
 import userServiceClient from '../../../api/userServiceClient'
+import { isRecord } from '../../../utils/dto'
 import type {
   AuthResponse,
   AuthUser,
@@ -10,10 +11,6 @@ import type {
 type UnknownRecord = Record<string, unknown>
 
 class MissingTokenError extends Error {}
-
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === 'object' && value !== null
-}
 
 function getRecordValue(
   source: UnknownRecord | null,
@@ -98,8 +95,7 @@ function normalizeAuthResponse(
     getString(userSource, ['email', 'Email']) ??
     getString(tokenPayload, [
       'email',
-      'Email',
-      'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
+      'Email'
     ]) ??
     fallbackUser?.email?.trim() ??
     ''
@@ -108,8 +104,7 @@ function normalizeAuthResponse(
     getString(tokenPayload, [
       'name',
       'Name',
-      'unique_name',
-      'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
+      'unique_name'
     ]) ??
     fallbackUser?.name?.trim() ??
     getEmailPrefix(email)
@@ -117,16 +112,14 @@ function normalizeAuthResponse(
     getString(userSource, ['role', 'Role']) ??
       getString(tokenPayload, [
         'role',
-        'Role',
-        'http://schemas.microsoft.com/ws/2008/06/identity/claims/role',
+        'Role'
       ]),
   )
   const id =
     getNumber(userSource, ['id', 'Id', 'userId', 'UserId']) ??
     getNumber(tokenPayload, [
       'sub',
-      'nameid',
-      'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier',
+      'nameid'
     ]) ??
     0
 

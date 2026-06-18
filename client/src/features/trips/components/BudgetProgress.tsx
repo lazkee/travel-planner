@@ -1,14 +1,11 @@
+import { formatCurrency } from '../../../utils/format'
+
 type BudgetProgressProps = {
   budget: number
   isLoading?: boolean
   remaining: number
   spent: number
 }
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  currency: 'USD',
-  style: 'currency',
-})
 
 function clampPercentage(value: number) {
   if (!Number.isFinite(value)) {
@@ -47,7 +44,7 @@ function BudgetProgress({
             <span className="inline-block h-5 w-32 animate-pulse rounded bg-slate-200" />
           ) : (
             <p className="m-0 text-base font-extrabold text-slate-900">
-              {currencyFormatter.format(spent)} / {currencyFormatter.format(budget)}
+              {formatCurrency(spent)} / {formatCurrency(budget)}
             </p>
           )}
         </div>
@@ -70,7 +67,7 @@ function BudgetProgress({
           <span className="font-medium text-slate-600">{percentageLabel}</span>
         )}
         <span className={remainingTextClassName}>
-          Remaining {currencyFormatter.format(remaining)}
+          Remaining {formatCurrency(remaining)}
         </span>
       </div>
     </div>

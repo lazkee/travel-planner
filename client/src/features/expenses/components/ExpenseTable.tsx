@@ -3,6 +3,7 @@ import type { ActivityDto } from '../../activities/types/activity.types'
 import Button from '../../../components/ui/Button'
 import Card from '../../../components/ui/Card'
 import EmptyState from '../../../components/ui/EmptyState'
+import { formatCurrency, formatDate } from '../../../utils/format'
 import type {
   ExpenseDto,
   ExpenseFilter,
@@ -35,23 +36,6 @@ type ExpenseDisplayRow =
       date: string
       name: string
     }
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-})
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  currency: 'USD',
-  style: 'currency',
-})
-
-function formatDate(value: string) {
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? 'Not set' : dateFormatter.format(date)
-}
 
 function getActivityCostRows(activities: ActivityDto[]) {
   return activities.filter(
@@ -174,7 +158,7 @@ function ExpenseTable({
                   )}
                 </td>
                 <td className="whitespace-nowrap px-4 py-4 text-right font-bold text-slate-900">
-                  {currencyFormatter.format(row.amount)}
+                  {formatCurrency(row.amount)}
                 </td>
                 {!readonly ? (
                   <td className="px-4 py-4">

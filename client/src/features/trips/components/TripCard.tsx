@@ -1,5 +1,6 @@
 import Button from '../../../components/ui/Button'
 import Card from '../../../components/ui/Card'
+import { formatCurrency, formatDate } from '../../../utils/format'
 import type { TravelPlanDto } from '../types/travelPlan.types'
 
 type TripCardProps = {
@@ -9,23 +10,6 @@ type TripCardProps = {
   onDelete?: (plan: TravelPlanDto) => void
   onEdit?: (plan: TravelPlanDto) => void
   onView?: (plan: TravelPlanDto) => void
-}
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-})
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  currency: 'USD',
-  style: 'currency',
-})
-
-function formatDate(value: string) {
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? 'Not set' : dateFormatter.format(date)
 }
 
 function getDurationInDays(startDate: string, endDate: string) {
@@ -97,7 +81,7 @@ function TripCard({
           <div>
             <dt className="font-bold text-slate-900">Budget</dt>
             <dd className="m-0 text-slate-600">
-              {currencyFormatter.format(plan.budget)}
+              {formatCurrency(plan.budget)}
             </dd>
           </div>
         </dl>

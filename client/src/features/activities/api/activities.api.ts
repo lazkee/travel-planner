@@ -1,55 +1,21 @@
 import travelServiceClient from '../../../api/travelServiceClient'
+import {
+  getEnum,
+  getNumber,
+  getOptionalString,
+  getString,
+  isRecord,
+} from '../../../utils/dto'
 import type {
   ActivityDto,
   ActivityRequestDto,
   ActivityStatus,
 } from '../types/activity.types'
 
-type UnknownRecord = Record<string, unknown>
-
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === 'object' && value !== null
-}
-
-function getRecordValue(source: UnknownRecord, keys: string[]): unknown {
-  return keys.map((key) => source[key]).find((value) => value !== undefined)
-}
-
-function getNumber(source: UnknownRecord, keys: string[]) {
-  const value = getRecordValue(source, keys)
-
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    const parsedValue = Number(value)
-
-    return Number.isFinite(parsedValue) ? parsedValue : 0
-  }
-
-  return 0
-}
-
-function getString(source: UnknownRecord, keys: string[]) {
-  const value = getRecordValue(source, keys)
-
-  return typeof value === 'string' ? value : ''
-}
-
-function getOptionalString(source: UnknownRecord, keys: string[]) {
-  const value = getString(source, keys).trim()
-
-  return value || undefined
-}
+const ACTIVITY_STATUSES = ['Planned', 'Reserved', 'Completed', 'Cancelled'] as const
 
 function normalizeStatus(value: string): ActivityStatus {
-  return value === 'Reserved' ||
-    value === 'Completed' ||
-    value === 'Cancelled' ||
-    value === 'Planned'
-    ? value
-    : 'Planned'
+  return getEnum(value, ACTIVITY_STATUSES, 'Planned')
 }
 
 function normalizeTime(value: string | undefined) {
@@ -60,7 +26,7 @@ function normalizeTime(value: string | undefined) {
   return value.slice(0, 5)
 }
 
-function normalizeActivity(data: unknown): ActivityDto {
+export function normalizeActivity(data: unknown): ActivityDto {
   const source = isRecord(data) ? data : {}
 
   return {

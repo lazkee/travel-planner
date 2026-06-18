@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
-import Card from '../../../components/ui/Card'
 import ConfirmDialog from '../../../components/ui/ConfirmDialog'
 import EmptyState from '../../../components/ui/EmptyState'
 import ErrorAlert from '../../../components/ui/ErrorAlert'
@@ -15,42 +14,13 @@ import type {
   CreateShareRequestDto,
   ShareTokenDto,
 } from '../types/share.types'
-import ShareAccessBadge from './ShareAccessBadge'
+import { getShareLink } from '../utils/shareLink'
 import ShareFormModal from './ShareFormModal'
-import ShareQrCode from './ShareQrCode'
+import ShareLinkCard from './ShareLinkCard'
 
 type ShareTabProps = {
   planId: number
   readonly?: boolean
-}
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-})
-
-const frontendBaseUrl = (
-  import.meta.env.VITE_FRONTEND_URL || window.location.origin
-).replace(/\/+$/, '')
-
-function buildShareLink(token: string) {
-  return `${frontendBaseUrl}/shared/${encodeURIComponent(token)}`
-}
-
-function getShareLink(share: ShareTokenDto) {
-  return share.shareUrl.trim() || buildShareLink(share.token)
-}
-
-function formatDate(value: string) {
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? 'Not set' : dateFormatter.format(date)
-}
-
-function isShareExpired(share: ShareTokenDto) {
-  const expiresAt = new Date(share.expiresAtUtc)
-
-  return Number.isNaN(expiresAt.getTime()) || expiresAt <= new Date()
 }
 
 function sortShares(a: ShareTokenDto, b: ShareTokenDto) {
@@ -187,70 +157,16 @@ function ShareTab({ planId, readonly = false }: ShareTabProps) {
 
       {!isLoading && sortedShares.length > 0 ? (
         <div className="grid gap-3">
-          {sortedShares.map((share) => {
-            const shareLink = getShareLink(share)
-            const isExpired = isShareExpired(share)
-
-            return (
-              <Card className="grid gap-4 p-4" key={share.token}>
-                <div className="grid gap-4 lg:grid-cols-[auto_1fr]">
-                  {share.token.trim() ? (
-                    <div className="lg:pt-1">
-                      <ShareQrCode qrCodeDataUrl={share.qrCodeDataUrl} />
-                    </div>
-                  ) : null}
-
-                  <div className="grid min-w-0 gap-4">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="grid gap-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <ShareAccessBadge accessLevel={share.accessLevel} />
-                          <span
-                            className={[
-                              'inline-flex rounded-full px-2.5 py-1 text-xs font-extrabold ring-1',
-                              isExpired
-                                ? 'bg-slate-100 text-slate-500 ring-slate-200'
-                                : 'bg-emerald-50 text-emerald-700 ring-emerald-100',
-                            ].join(' ')}
-                          >
-                            {isExpired ? 'Expired' : 'Active'}
-                          </span>
-                        </div>
-                        <p className="m-0 text-sm text-slate-500">
-                          Expires {formatDate(share.expiresAtUtc)}
-                        </p>
-                      </div>
-
-                      {!readonly ? (
-                        <div className="flex flex-col gap-2 sm:flex-row">
-                          <Button
-                            onClick={() => void handleCopyLink(share)}
-                            variant="primary"
-                          >
-                            {copiedToken === share.token
-                              ? 'Copied'
-                              : 'Copy link'}
-                          </Button>
-                          <Button
-                            onClick={() => setRevokingShare(share)}
-                            variant="danger"
-                          >
-                            Revoke
-                          </Button>
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                      <p className="m-0 break-all font-mono text-xs text-slate-600">
-                        {shareLink}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            )
-          })}
+          {sortedShares.map((share) => (
+            <ShareLinkCard
+              copied={copiedToken === share.token}
+              key={share.token}
+              onCopy={() => void handleCopyLink(share)}
+              onRevoke={() => setRevokingShare(share)}
+              readonly={readonly}
+              share={share}
+            />
+          ))}
         </div>
       ) : null}
 

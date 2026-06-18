@@ -1,18 +1,15 @@
 import axios from 'axios'
 import travelServiceClient from '../../../api/travelServiceClient'
+import { isRecord } from '../../../utils/dto'
+import { normalizeDestination } from '../../destinations/api/destinations.api'
+import { READONLY_MUTATION_MESSAGE } from '../constants'
 import type {
   DestinationDto,
   DestinationRequestDto,
 } from '../../destinations/types/destination.types'
 
-type UnknownRecord = Record<string, unknown>
-
 function getSharedBasePath(token: string) {
   return `/api/shared/${encodeURIComponent(token)}`
-}
-
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === 'object' && value !== null
 }
 
 function getResponseMessage(error: unknown) {
@@ -32,9 +29,7 @@ async function runSharedDestinationMutation<T>(
     return await request()
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 403) {
-      throw new Error(
-        getResponseMessage(error) || 'This share link does not allow editing.',
-      )
+      throw new Error(getResponseMessage(error) || READONLY_MUTATION_MESSAGE)
     }
 
     throw error
@@ -49,7 +44,7 @@ export async function createSharedDestination(
     travelServiceClient.post(`${getSharedBasePath(token)}/destinations`, request),
   )
 
-  return response.data as DestinationDto
+  return normalizeDestination(response.data)
 }
 
 export async function updateSharedDestination(
@@ -64,7 +59,7 @@ export async function updateSharedDestination(
     ),
   )
 
-  return response.data as DestinationDto
+  return normalizeDestination(response.data)
 }
 
 export async function deleteSharedDestination(

@@ -1,4 +1,5 @@
 import Card from '../../../components/ui/Card'
+import { formatCurrency, formatLongDate } from '../../../utils/format'
 import type { BudgetSummaryDto } from '../types/budgetSummary.types'
 import type { TravelPlanDto } from '../types/travelPlan.types'
 
@@ -7,23 +8,6 @@ type OverviewTabProps = {
   isBudgetSummaryLoading?: boolean
   ownerLabel?: string
   plan: TravelPlanDto
-}
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'long',
-  day: 'numeric',
-  year: 'numeric',
-})
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  currency: 'USD',
-  style: 'currency',
-})
-
-function formatDate(value: string) {
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? 'Not set' : dateFormatter.format(date)
 }
 
 function getDurationInDays(startDate: string, endDate: string) {
@@ -72,10 +56,8 @@ function OverviewTab({
   plan,
 }: OverviewTabProps) {
   const budget = budgetSummary?.budget ?? plan.budget
-  const spent = currencyFormatter.format(budgetSummary?.totalExpenses ?? 0)
-  const remaining = currencyFormatter.format(
-    budgetSummary?.remainingBudget ?? budget,
-  )
+  const spent = formatCurrency(budgetSummary?.totalExpenses ?? 0)
+  const remaining = formatCurrency(budgetSummary?.remainingBudget ?? budget)
 
   return (
     <Card className="p-5">
@@ -112,13 +94,13 @@ function OverviewTab({
               value={ownerLabel.replace('Owner: ', '')}
             />
           ) : null}
-          <DetailItem label="Start date" value={formatDate(plan.startDate)} />
-          <DetailItem label="End date" value={formatDate(plan.endDate)} />
+          <DetailItem label="Start date" value={formatLongDate(plan.startDate)} />
+          <DetailItem label="End date" value={formatLongDate(plan.endDate)} />
           <DetailItem
             label="Duration"
             value={getDurationInDays(plan.startDate, plan.endDate)}
           />
-          <DetailItem label="Budget" value={currencyFormatter.format(budget)} />
+          <DetailItem label="Budget" value={formatCurrency(budget)} />
           <DetailItem
             isLoading={isBudgetSummaryLoading}
             label="Spent"
@@ -129,7 +111,7 @@ function OverviewTab({
             label="Remaining"
             value={remaining}
           />
-          <DetailItem label="Created date" value={formatDate(plan.createdAt)} />
+          <DetailItem label="Created date" value={formatLongDate(plan.createdAt)} />
         </dl>
       </div>
     </Card>

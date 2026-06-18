@@ -1,10 +1,7 @@
 import axios from 'axios'
+import { isRecord } from '../utils/dto'
 
 type ApiErrorData = Record<string, unknown>
-
-function isRecord(value: unknown): value is ApiErrorData {
-  return typeof value === 'object' && value !== null
-}
 
 function getStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) {
@@ -19,7 +16,7 @@ function getValidationMessages(data: unknown): string | null {
     return null
   }
 
-  const source = isRecord(data.errors) ? data.errors : data
+  const source = isRecord(data.errors) ? data.errors : (data as ApiErrorData)
   const messages = Object.values(source).flatMap(getStringArray)
 
   return messages.length > 0 ? messages.join(' ') : null

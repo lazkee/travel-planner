@@ -3,6 +3,8 @@ import { getApiErrorMessage } from '../../../api/apiError'
 import Button from '../../../components/ui/Button'
 import type { TabItem } from '../../../components/ui/Tabs'
 import { useToast } from '../../../context/ToastContext'
+import { formatDateTime } from '../../../utils/format'
+import { READONLY_MUTATION_MESSAGE } from '../constants'
 import OverviewTab from '../../trips/components/OverviewTab'
 import TravelPlanFormModal from '../../trips/components/TravelPlanFormModal'
 import TripDetailsView from '../../trips/components/TripDetailsView'
@@ -35,18 +37,6 @@ const tabs: TabItem[] = [
   { id: 'expenses', label: 'Expenses' },
   { id: 'checklist', label: 'Checklist' },
 ]
-
-const dateTimeFormatter = new Intl.DateTimeFormat('en-US', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-})
-const readonlyMutationMessage = 'This share link does not allow editing.'
-
-function formatDateTime(value: string) {
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? 'Not set' : dateTimeFormatter.format(date)
-}
 
 function getUsedBudget(plan: SharedTravelPlanDto) {
   const recordedExpenses = plan.expenses.reduce(
@@ -113,7 +103,7 @@ function SharedTripDetailsView({
 
   async function handleSavePlan(request: TravelPlanRequestDto) {
     if (readonly) {
-      const error = new Error(readonlyMutationMessage)
+      const error = new Error(READONLY_MUTATION_MESSAGE)
       showError(error.message)
       throw error
     }

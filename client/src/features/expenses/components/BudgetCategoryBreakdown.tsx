@@ -1,3 +1,4 @@
+import { formatCurrency } from '../../../utils/format'
 import type {
   ExpenseCategory,
   ExpenseFilter,
@@ -10,11 +11,6 @@ type BudgetCategoryBreakdownProps = {
   usedBudget: number
   onSelect: (filter: ExpenseFilter) => void
 }
-
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  currency: 'USD',
-  style: 'currency',
-})
 
 function getPercentage(amount: number, total: number) {
   if (total <= 0) {
@@ -54,7 +50,7 @@ function CategoryButton({
         <div>
           <p className="m-0 text-sm font-extrabold text-slate-900">{label}</p>
           <p className="m-0 mt-1 text-sm text-slate-500">
-            {currencyFormatter.format(amount)}
+            {formatCurrency(amount)}
           </p>
         </div>
         <span className="text-sm font-bold text-slate-600">
@@ -84,7 +80,7 @@ function BudgetCategoryBreakdown({
           Category breakdown
         </h3>
         <p className="m-0 mt-1 text-sm text-slate-500">
-          Total planned cost: {currencyFormatter.format(usedBudget)}.
+          Total planned cost: {formatCurrency(usedBudget)}.
           Percentages show each category share.
         </p>
       </div>

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import Card from '../../../components/ui/Card'
+import { formatDate } from '../../../utils/format'
 import type { BudgetSummaryDto } from '../types/budgetSummary.types'
 import type { TravelPlanDto } from '../types/travelPlan.types'
 import BudgetProgress from './BudgetProgress'
@@ -13,18 +14,6 @@ type TripHeaderProps = {
   isBudgetSummaryLoading?: boolean
   ownerLabel?: string
   plan: TravelPlanDto
-}
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-})
-
-function formatDate(value: string) {
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? 'Not set' : dateFormatter.format(date)
 }
 
 function getDurationInDays(startDate: string, endDate: string) {

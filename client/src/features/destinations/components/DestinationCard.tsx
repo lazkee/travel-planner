@@ -1,5 +1,6 @@
 import Button from '../../../components/ui/Button'
 import Card from '../../../components/ui/Card'
+import { formatDate } from '../../../utils/format'
 import type { DestinationDto } from '../types/destination.types'
 
 type DestinationCardProps = {
@@ -7,18 +8,6 @@ type DestinationCardProps = {
   readonly?: boolean
   onDelete?: (destination: DestinationDto) => void
   onEdit?: (destination: DestinationDto) => void
-}
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', {
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-})
-
-function formatDate(value: string) {
-  const date = new Date(value)
-
-  return Number.isNaN(date.getTime()) ? 'Not set' : dateFormatter.format(date)
 }
 
 function DestinationCard({

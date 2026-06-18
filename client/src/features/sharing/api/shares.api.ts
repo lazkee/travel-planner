@@ -1,44 +1,21 @@
 import travelServiceClient from '../../../api/travelServiceClient'
+import {
+  getEnum,
+  getNumber,
+  getRecordValue,
+  getString,
+  isRecord,
+} from '../../../utils/dto'
 import type {
   CreateShareRequestDto,
   ShareAccessLevel,
   ShareTokenDto,
 } from '../types/share.types'
 
-type UnknownRecord = Record<string, unknown>
+const SHARE_ACCESS_LEVELS = ['View', 'Edit'] as const
 
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === 'object' && value !== null
-}
-
-function getRecordValue(source: UnknownRecord, keys: string[]): unknown {
-  return keys.map((key) => source[key]).find((value) => value !== undefined)
-}
-
-function getNumber(source: UnknownRecord, keys: string[]) {
-  const value = getRecordValue(source, keys)
-
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    const parsedValue = Number(value)
-
-    return Number.isFinite(parsedValue) ? parsedValue : 0
-  }
-
-  return 0
-}
-
-function getString(source: UnknownRecord, keys: string[]) {
-  const value = getRecordValue(source, keys)
-
-  return typeof value === 'string' ? value : ''
-}
-
-function normalizeAccessLevel(value: string): ShareAccessLevel {
-  return value === 'Edit' ? 'Edit' : 'View'
+export function normalizeAccessLevel(value: string): ShareAccessLevel {
+  return getEnum(value, SHARE_ACCESS_LEVELS, 'View')
 }
 
 function normalizeShareToken(data: unknown): ShareTokenDto {
